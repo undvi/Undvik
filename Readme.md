@@ -1,3 +1,113 @@
+Roadmap zur Verbesserung der MOD in RP richtung 
+
+Hier ist eine strukturierte Roadmap für dein Projekt. Diese kannst du auch für dein Team nutzen, damit jeder weiß, welche Features und Anpassungen geplant sind.
+
+
+---
+
+Persistent Empires Mod - Erweiterungs-Roadmap
+
+Phase 1: Analyse & Planung
+
+:white_check_mark: Projektstruktur analysieren
+
+Identifikation der relevanten Dateien für:
+
+Handelssystem
+
+Schmiedesystem
+
+Klassensystem
+
+Fraktions- & Rängesystem
+
+Kriegssystem
+
+AI-System
+
+Bausystem
+:white_check_mark: Bestehenden Code dokumentieren
+:white_check_mark: Backup des aktuellen Codes erstellen
+
+
+
+
+---
+
+Phase 2: Neue Features & Überarbeitung bestehender Systeme
+
+1. Handelssystem überarbeiten
+
+:black_square_button: Spielerbasierte Märkte statt statischer Shops
+:black_square_button: Marktstände für Spieler einführen
+:black_square_button: Dynamische Preise & Handelssteuer für Städte & Burgen
+
+2. Schmiedesystem erweitern
+
+:white_check_mark:Schmiede erfordert Bau & Blueprints
+:white_check_mark:Blueprints müssen in einer Akademie erforscht werden
+:white_check_mark:Neue Waffen & Rüstungen freischalten durch Forschung
+
+3. Klassensystem überarbeiten & begrenzen
+
+:black_square_button: Neue Klassenhierarchie mit festen Limits
+:black_square_button: Exklusive Führungsklassen (Lord, Ritter, Offizier)
+:white_check_mark:Beschränkung auf eine begrenzte Anzahl an Eliteeinheiten
+:black_square_button: Balancing der Geschwindigkeit & Kampfstärken
+
+4. Fraktions- & Rängesystem
+
+:white_check_mark: Adelsränge einführen mit Einfluss auf:
+
+Anzahl an besitzbaren Ländereien
+
+Rekrutierbare Truppenarten
+:white_check_mark: Ränge können durch Prestige & Events verdient werden
+:white_check_mark:Ränge sind an den Fraktionsanführer gebunden & nicht übertragbar (außer durch Erbfolge)
+
+5. Kriegssystem erweitern
+:white_check_mark:Neue Kriegsarten (z. B. Handelskrieg, Überfall, Eroberung)
+:white_check_mark: Kriegserklärung nur mit bestimmtem Adelsrang möglich
+:black_square_button: Eroberungssystem für Dörfer & Burgen erweitern
+
+6. AI-System für lebendige NPCs
+
+:black_square_button: Dynamische NPCs, die arbeiten, kämpfen & mit Spielern interagieren
+:black_square_button: Bauern sammeln Ressourcen, Schmiede arbeiten in Werkstätten
+:black_square_button: Stadtwachen können Spielern den Weg zeigen
+:black_square_button: Kriegsmodus: NPCs rüsten sich & kämpfen mit
+:black_square_button: Optional: KI-Dialoge mit ChatGPT (falls technisch umsetzbar)
+
+7. Bausystem überarbeiten
+
+:black_square_button: Neues Bau-Menü mit Auswahl für Gebäude
+:black_square_button: Platzierung nur an bestimmten Baupunkten möglich
+:black_square_button: Spieler können eigene Gebäude für Handel & Produktion bauen
+
+8. Multiplayer-Integration von neuen Items (optional)
+
+:black_square_button: Versuch, zusätzliche Rüstungen & Waffen in Multiplayer einzufügen
+:black_square_button: Server- und clientseitige Item-Registrierung testen
+
+
+---
+
+Phase 3: Testen & Optimieren
+
+:black_square_button: Alpha-Test mit internen Spielern
+:black_square_button: Balancing-Anpassungen für Klassen, Wirtschaft & Krieg
+:black_square_button: Bugfixing & Performance-Optimierung
+
+
+---
+
+Phase 4: Veröffentlichung & Weiterentwicklung
+
+:black_square_button: Beta-Release für die Community
+:black_square_button: Feedback sammeln & Features anpassen
+:black_square_button: Regelmäßige Updates & neue Inhalte
+
+
 # Persistent Empires Open Sourced
 
 Persistent empires is a Mount & Blade II: Bannerlord mod that introduces some new mechanics to multiplayer gaming that allow players to do roleplay, team fight, clan fight, farming, mining etc...
