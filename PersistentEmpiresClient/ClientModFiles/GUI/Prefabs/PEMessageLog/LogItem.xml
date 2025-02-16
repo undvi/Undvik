@@ -1,0 +1,20 @@
+﻿<Prefab>
+	<Constants>
+	</Constants>
+	<Window>
+		<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" StackLayout.LayoutMethod="VerticalBottomToTop">
+			<Children>
+				<!-- Log-Eintrag -->
+				<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" MarginTop="6" StackLayout.LayoutMethod="HorizontalLeftToRight">
+					<Children>
+						<!-- Datum -->
+						<RichTextWidget WidthSizePolicy="Fixed" HeightSizePolicy="CoverChildren" SuggestedWidth="150" MarginLeft="10" MarginRight="10" Brush="PER.Log.DateText" DoNotAcceptEvents="true" Text="@Date" HorizontalAlignment="Left"/>
+
+						<!-- Beschreibung -->
+						<RichTextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" MarginLeft="5" MarginRight="10" Brush="PER.Log.DescriptionText" DoNotAcceptEvents="true" Text="@Description" HorizontalAlignment="Left"/>
+					</Children>
+				</ListPanel>
+			</Children>
+		</ListPanel>
+	</Window>
+</Prefab>

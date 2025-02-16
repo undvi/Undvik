@@ -1,0 +1,109 @@
+<Prefab>
+	<Constants>
+	</Constants>
+	<Window>
+		<!-- Hintergrund-Widget -->
+		<Widget WidthSizePolicy="Fixed"
+			HeightSizePolicy="Fixed"
+			HorizontalAlignment="Center"
+			SuggestedHeight="850"
+			SuggestedWidth="1000"
+			MarginLeft="100"
+			MarginRight="10"
+			MarginTop="140"
+			MarginBottom="80">
+
+			<Children>
+				<Standard.Window Parameter.Title="Server Rules" WidthSizePolicy="StretchToParent">
+					<Children>
+
+						<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent">
+							<Children>
+
+								<!-- Forum-Link -->
+								<TextWidget WidthSizePolicy="StretchToParent"
+									HeightSizePolicy="Fixed"
+									SuggestedHeight="30"
+									MarginTop="20"
+									HorizontalAlignment="Center"
+									Text="@ForumLink"
+									Brush="PESpawn.PressFToSpawn"/>
+
+								<!-- Info-Nachricht -->
+								<TextWidget WidthSizePolicy="StretchToParent"
+									HeightSizePolicy="Fixed"
+									SuggestedHeight="30"
+									MarginTop="20"
+									HorizontalAlignment="Left"
+									Text="@Message"
+									Brush="PESpawn.PressFToSpawn"/>
+
+								<!-- Scrollbarer Bereich für Regeln -->
+								<ListPanel HeightSizePolicy="Fixed"
+									SuggestedHeight="600"
+									WidthSizePolicy="StretchToParent"
+									MarginTop="30">
+
+									<Children>
+										<ScrollablePanel WidthSizePolicy="StretchToParent"
+											HeightSizePolicy="StretchToParent"
+											AutoHideScrollBars="true"
+											ClipRect="ItemListRect"
+											InnerPanel="ItemListRect\ItemListPanel"
+											MouseScrollAxis="Vertical"
+											VerticalScrollbar="..\ItemListScrollbar\Scrollbar">
+
+											<Children>
+												<Widget Id="ItemListRect"
+													WidthSizePolicy="StretchToParent"
+													HeightSizePolicy="StretchToParent"
+													ClipContents="true">
+
+													<Children>
+														<ListPanel Id="ItemListPanel"
+															DataSource="{Rules}"
+															WidthSizePolicy="StretchToParent"
+															HeightSizePolicy="CoverChildren"
+															StackLayout.LayoutMethod="VerticalBottomToTop">
+
+															<ItemTemplate>
+																<ListPanel WidthSizePolicy="StretchToParent"
+																	HeightSizePolicy="CoverChildren"
+																	MarginTop="10">
+
+																	<Children>
+																		<TextWidget WidthSizePolicy="StretchToParent"
+																			HeightSizePolicy="CoverChildren"
+																			Text="@RuleText"
+																			Brush="PESpawn.Hint"
+																			MarginLeft="15"
+																			MarginRight="15"
+																			MarginBottom="5"/>
+																	</Children>
+
+																</ListPanel>
+															</ItemTemplate>
+
+														</ListPanel>
+													</Children>
+												</Widget>
+											</Children>
+										</ScrollablePanel>
+
+										<!-- Scrollbar -->
+										<Standard.VerticalScrollbar Id="ItemListScrollbar"
+											HeightSizePolicy="StretchToParent"
+											HorizontalAlignment="Right"
+											VerticalAlignment="Center"/>
+									</Children>
+								</ListPanel>
+
+							</Children>
+						</ListPanel>
+
+					</Children>
+				</Standard.Window>
+			</Children>
+		</Widget>
+	</Window>
+</Prefab>

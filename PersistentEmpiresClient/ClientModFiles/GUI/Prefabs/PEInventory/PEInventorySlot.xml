@@ -1,0 +1,51 @@
+<Prefab>
+	<Parameters>
+		<Parameter Name="ItemDataSource" DefaultValue="" />
+		<Parameter Name="EquipmentIndex" DefaultValue="0" />
+		<Parameter Name="HorizontalAlignment" DefaultValue="Left" />
+	</Parameters>
+
+	<Window>
+		<Widget WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedHeight="140" SuggestedWidth="140" DataSource="*ItemDataSource">
+			<Children>
+
+				<!-- Hintergrund -->
+				<BrushWidget Id="Background" AcceptDrop="true" Command.Drop="RequestExecuteTransfer"
+				  WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent"
+				  Sprite="StdAssets\frame_small" Color="#FFFFFFFF">
+					<Children>
+						<BrushWidget MarginLeft="10" MarginRight="10" MarginTop="10" MarginBottom="10"
+						  WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent"
+						  Brush="PE.InventorySlot.Background">
+						</BrushWidget>
+					</Children>
+				</BrushWidget>
+
+				<!-- Button für Interaktionen -->
+				<ButtonWidget HorizontalAlignment="*HorizontalAlignment" MarginLeft="20" MarginRight="20" MarginTop="30"
+				  Command.Click="ExecuteClickAction" Command.AlternateClick="ExecuteAlternateClick"
+				  AcceptDrag="@IsDraggable" DoNotPassEventsToChildren="true"
+				  WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="80"
+				  Command.HoverBegin="ShowTooltip(@ItemName, @ItemDescription)" Command.HoverEnd="HideTooltip">
+
+					<Children>
+						<!-- Item-Icon -->
+						<ImageIdentifierWidget Id="ImageIdentifier" DataSource="{ImageIdentifier}"
+						  WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent"
+						  ImageId="@Id" AdditionalArgs="@AdditionalArgs" ImageTypeCode="@ImageTypeCode">
+							<Children>
+								<!-- Item-Zähler (z. B. Anzahl der Items) -->
+								<TextWidget HorizontalAlignment="Right" VerticalAlignment="Bottom"
+								  MarginRight="10" MarginBottom="5" DataSource="{..}"
+								  IntText="{?Count, DefaultValue=0}">
+								</TextWidget>
+							</Children>
+						</ImageIdentifierWidget>
+
+					</Children>
+				</ButtonWidget>
+
+			</Children>
+		</Widget>
+	</Window>
+</Prefab>

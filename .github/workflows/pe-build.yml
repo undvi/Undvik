@@ -1,0 +1,52 @@
+name: pe-build
+
+on:
+  workflow_call:
+    inputs:
+      build_project:
+        description: "Whether to build Client or Server files"
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      build_project:
+        description: "Whether to build Client or Server files"
+        required: true
+        type: choice
+        options:
+        - Client
+        - Server
+
+env:
+  SOLUTION_FILE_PATH: PersistentEmpires${{inputs.build_project}}/PersistentEmpires${{inputs.build_project}}.sln
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    environment: development
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 6.0.x
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Build
+      run: dotnet publish -p:PublishProfile=${{inputs.build_project}}-win-x64 ${{env.SOLUTION_FILE_PATH}}
+
+    - name: Build Linux x64 Server
+      run: dotnet publish -p:PublishProfile=${{inputs.build_project}}-linux-x64 ${{env.SOLUTION_FILE_PATH}}
+      if: ${{inputs.build_project == 'Server'}}
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{inputs.build_project}}-Publish
+        retention-days: 1
+        path: 'publish'

@@ -1,0 +1,51 @@
+<Prefab>
+	<Constants>
+		<Constant Name="TypingArea.Height" Value="40" />
+		<Constant Name="TypingArea.Width" Value="450" />
+	</Constants>
+
+	<Window>
+		<Widget HorizontalAlignment="Center" HeightSizePolicy="Fixed" VerticalAlignment="Top"
+		  WidthSizePolicy="Fixed" SuggestedHeight="180" SuggestedWidth="800" MarginBottom="40" MarginTop="40">
+			<Children>
+
+				<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren"
+				  StackLayout.LayoutMethod="VerticalBottomToTop">
+					<Children>
+
+						<!-- Titel des Admin-Chats -->
+						<TextWidget Text="Admin Chat" WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed"
+						  SuggestedHeight="35" MarginLeft="20" MarginBottom="10"
+						  Brush="MP.Chat.Title.Text" HorizontalAlignment="Center" />
+
+						<!-- Eingabe-Bereich -->
+						<Widget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="55"
+						  MarginLeft="20" MarginRight="20" Sprite="StdAssets\Popup\text_input">
+							<Children>
+								<EditableTextWidget Id="EditableLocalChat" WidthSizePolicy="StretchToParent"
+								  HeightSizePolicy="StretchToParent" Brush="MP.ChatLog.Text"
+								  Text="@TextInput" MarginLeft="20" MarginRight="20"
+								  GamepadNavigationIndex="0" />
+							</Children>
+						</Widget>
+
+						<!-- Senden-Button -->
+						<ButtonWidget DoNotPassEventsToChildren="true" UpdateChildrenStates="true"
+						  WidthSizePolicy="Fixed" SuggestedWidth="180" HeightSizePolicy="Fixed"
+						  SuggestedHeight="45" HorizontalAlignment="Center" MarginTop="10"
+						  Brush="WideButton.Flat" Command.Click="SendAdminMessage">
+							<Children>
+								<TextWidget WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren"
+								  VerticalAlignment="Center" Brush="MP.Chat.Button.Text"
+								  Brush.FontSize="22" Brush.TextVerticalAlignment="Center"
+								  Text="Send" />
+							</Children>
+						</ButtonWidget>
+
+					</Children>
+				</ListPanel>
+
+			</Children>
+		</Widget>
+	</Window>
+</Prefab>

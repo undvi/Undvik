@@ -1,0 +1,51 @@
+<Widget HorizontalAlignment="Center" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="1000" SuggestedHeight="700" VerticalAlignment="Center">
+	<Children>
+		<Standard.Window Parameter.Title="🏛️ Akademie">
+			<Children>
+				<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent">
+					<Children>
+
+						<TextWidget WidthSizePolicy="StretchToParent" Text="📜 Akademie-Fortschritt" Brush.FontSize="25" MarginTop="15" />
+
+						<!-- Eintrittsbereich -->
+						<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren">
+							<Children>
+								<TextWidget WidthSizePolicy="CoverChildren" Text="💰 Eintritt kostet: 500 Gold &amp; 50 Einfluss" Brush.FontSize="20" />
+								<ButtonWidget WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="200" SuggestedHeight="50"
+											  Text="🛡️ Akademie betreten" OnClick="EnterAcademy()" />
+							</Children>
+						</ListPanel>
+
+
+
+						<!-- Blueprint-Auswahl -->
+						<ListPanel Id="BlueprintList" DataSource="{AcademyBlueprints}" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren">
+							<ItemTemplate>
+								<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren">
+									<Children>
+										<TextWidget WidthSizePolicy="CoverChildren" Text="{BlueprintName}" Brush.FontSize="20" />
+										<ButtonWidget Text="🔓 Freischalten" OnClick="UnlockBlueprint(@BlueprintID)" Condition="@IsUnlocked == false" />
+									</Children>
+								</ListPanel>
+							</ItemTemplate>
+						</ListPanel>
+
+						<!-- Blueprint-Unlock -->
+						<ListPanel Id="BlueprintList" DataSource="{AcademyBlueprints}" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren">
+							<ItemTemplate>
+								<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren">
+									<Children>
+										<TextWidget WidthSizePolicy="CoverChildren" Text="{BlueprintName}" Brush.FontSize="20" />
+										<ButtonWidget Text="🔓 Freischalten" OnClick="UnlockBlueprint({BlueprintID})" Condition="{!IsUnlocked}" />
+									</Children>
+								</ListPanel>
+							</ItemTemplate>
+						</ListPanel>
+
+					</Children>
+				</ListPanel>
+			</Children>
+		</Standard.Window>
+	</Children>
+</Widget>
+

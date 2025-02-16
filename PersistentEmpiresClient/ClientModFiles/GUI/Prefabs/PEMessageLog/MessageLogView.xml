@@ -1,0 +1,38 @@
+﻿<Prefab>
+	<Constants>
+	</Constants>
+	<Window>
+		<!-- Haupt-Container -->
+		<Widget WidthSizePolicy="Fixed" HeightSizePolicy="StretchToParent" HorizontalAlignment="Right" SuggestedWidth="1000" MarginLeft="100" MarginRight="10" MarginTop="140" MarginBottom="80">
+			<Children>
+				<Standard.Window Parameter.Title="@LogTitle" WidthSizePolicy="StretchToParent">
+					<Children>
+						<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" PositionYOffset="10">
+							<Children>
+
+								<!-- Scrollbarer Log-Bereich -->
+								<ScrollablePanel Id="MessageLogPanel" WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" AutoHideScrollBars="true" ClipRect="LogListRect" InnerPanel="LogListRect\LogListPanel" MouseScrollAxis="Vertical" VerticalScrollbar="..\LogScrollbar">
+									<Children>
+										<Widget Id="LogListRect" WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" ClipContents="true">
+											<Children>
+												<ListPanel Id="LogListPanel" DataSource="{LogEntries}" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" StackLayout.LayoutMethod="VerticalBottomToTop">
+													<ItemTemplate>
+														<LogItem />
+													</ItemTemplate>
+												</ListPanel>
+											</Children>
+										</Widget>
+									</Children>
+								</ScrollablePanel>
+
+								<!-- Scrollbar für das Log -->
+								<Standard.VerticalScrollbar Id="LogScrollbar" HeightSizePolicy="StretchToParent" HorizontalAlignment="Right" VerticalAlignment="Bottom" />
+
+							</Children>
+						</ListPanel>
+					</Children>
+				</Standard.Window>
+			</Children>
+		</Widget>
+	</Window>
+</Prefab>

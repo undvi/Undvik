@@ -1,0 +1,72 @@
+<Prefab>
+	<Constants>
+		<Constant Name="NextButton.Width" BrushLayer="Default" BrushName="ButtonBrush1" BrushValueType="Width" />
+		<Constant Name="NextButton.Height" BrushLayer="Default" BrushName="ButtonBrush1" BrushValueType="Height" />
+
+		<Constant Name="PreviousButton.Width" BrushLayer="Default" BrushName="ButtonBrush2" BrushValueType="Width" />
+		<Constant Name="PreviousButton.Height" BrushLayer="Default" BrushName="ButtonBrush2" BrushValueType="Height" />
+
+		<Constant Name="Banner.Width" BrushLayer="Default" BrushName="ClanNaming.Stage.Banner" BrushValueType="Width" />
+		<Constant Name="Banner.Height" BrushLayer="Default" BrushName="ClanNaming.Stage.Banner" BrushValueType="Height" />
+
+		<Constant Name="Banner.Width.Scaled" MultiplyResult="0.72" Value="!Banner.Width" />
+		<Constant Name="Banner.Height.Scaled" MultiplyResult="0.72" Value="!Banner.Height" />
+	</Constants>
+
+	<Window>
+		<Widget HorizontalAlignment="Center" VerticalAlignment="Top" HeightSizePolicy="StretchToParent" SuggestedWidth="650" MarginBottom="310" MarginTop="310">
+			<Children>
+				<Standard.Window Parameter.Title="Change Faction Banner">
+					<Children>
+
+						<!-- Banner Vorschau -->
+						<BrushWidget WidthSizePolicy="Fixed" HeightSizePolicy="Fixed"
+							SuggestedWidth="!Banner.Width.Scaled"
+							SuggestedHeight="!Banner.Height.Scaled"
+							Brush="ClanNaming.Stage.Banner"
+							HorizontalAlignment="Center"
+							VerticalAlignment="Top" />
+
+						<!-- Banner Code Anzeige -->
+						<Widget Id="BannerCodeDisplay" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedHeight="50" SuggestedWidth="573" HorizontalAlignment="Center" VerticalAlignment="Top" MarginTop="20">
+							<Children>
+								<TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="ClanNaming.DisabledReason.Text" Text="@BannerCode"/>
+							</Children>
+						</Widget>
+
+						<!-- Buttons -->
+						<ListPanel WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren" HorizontalAlignment="Center" VerticalAlignment="Bottom" MarginBottom="50">
+							<Children>
+								<!-- Cancel Button -->
+								<ButtonWidget DoNotPassEventsToChildren="true" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="135" SuggestedHeight="74" HorizontalAlignment="Center" VerticalAlignment="Center" Brush="Standard.BackButton" Command.Click="OnCancel">
+								</ButtonWidget>
+
+								<!-- Paste Banner Code -->
+								<ButtonWidget DoNotPassEventsToChildren="true" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="250" SuggestedHeight="74" HorizontalAlignment="Center" VerticalAlignment="Center" Brush="Popup.Done.Button.NineGrid" Command.Click="OnPaste" IsEnabled="true">
+									<Children>
+										<TextWidget WidthSizePolicy="CoverChildren" HeightSizePolicy="StretchToParent" HorizontalAlignment="Center" VerticalAlignment="Center" Brush="Popup.Button.Text" Text="Paste new banner" />
+									</Children>
+								</ButtonWidget>
+
+								<!-- Apply New Banner -->
+								<ButtonWidget DoNotPassEventsToChildren="true" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="250" SuggestedHeight="74" HorizontalAlignment="Center" VerticalAlignment="Center" Brush="Popup.Done.Button.NineGrid" Command.Click="OnApply" IsEnabled="@HasValidBannerCode">
+									<Children>
+										<TextWidget WidthSizePolicy="CoverChildren" HeightSizePolicy="StretchToParent" HorizontalAlignment="Center" VerticalAlignment="Center" Brush="Popup.Button.Text" Text="Apply New Banner" />
+									</Children>
+								</ButtonWidget>
+							</Children>
+						</ListPanel>
+
+						<!-- Status Nachricht -->
+						<Widget Id="StatusMessage" WidthSizePolicy="Fixed" HeightSizePolicy="CoverChildren" SuggestedWidth="573" HorizontalAlignment="Center" VerticalAlignment="Bottom" PositionYOffset="10">
+							<Children>
+								<TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="100" MarginTop="0" MarginLeft="10" MarginRight="10" Text="@BannerCodeStatus" Brush="ClanNaming.DisabledReason.Text" />
+							</Children>
+						</Widget>
+
+					</Children>
+				</Standard.Window>
+			</Children>
+		</Widget>
+	</Window>
+</Prefab>

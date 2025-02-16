@@ -1,0 +1,101 @@
+<Prefab>
+	<Constants>
+		<Constant Name="TypingArea.Height" Value="40" />
+		<Constant Name="TypingArea.Width" Value="350" />
+	</Constants>
+
+	<Window>
+		<Widget HorizontalAlignment="Center" HeightSizePolicy="StretchToParent" SuggestedWidth="900" MarginBottom="50" MarginTop="50">
+			<Children>
+				<Standard.Window Parameter.Title="Diplomacy">
+					<Children>
+						<ListPanel StackLayout.LayoutMethod="VerticalBottomToTop" WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren">
+							<Children>
+
+								<!-- Clickable Faction Banners -->
+								<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" StackLayout.LayoutMethod="HorizontalLeftToRight">
+									<Children>
+										<ScrollablePanel Id="ScrollablePanel" WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" AutoHideScrollBars="true" ClipRect="ClipRect" InnerPanel="ClipRect\FactionsGrid" VerticalScrollbar="..\VerticalScrollbar">
+											<Children>
+												<Widget Id="ClipRect" WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" ClipContents="true">
+													<Children>
+														<GridWidget DataSource="{Factions}" Id="FactionsGrid" DefaultCellHeight="240" DefaultCellWidth="140" HorizontalAlignment="Center" VerticalAlignment="Top" ColumnCount="2" MarginLeft="40" MarginRight="40" MarginTop="40" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren">
+															<ItemTemplate>
+																<ButtonWidget Brush="PE.FactionDiplomacy.FactionButton" Command.Click="ExecuteSelectFaction" IsSelected="@IsSelected" DoNotPassEventsToChildren="true" WidthSizePolicy="Fixed" HeightSizePolicy="CoverChildren" SuggestedWidth="220" SuggestedHeight="140" UpdateChildrenStates="true" GamepadNavigationIndex="0" MarginRight="50" HorizontalAlignment="Center">
+																	<Children>
+																		<ListPanel StackLayout.LayoutMethod="VerticalBottomToTop" MarginTop="30" WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren">
+																			<Children>
+																				<MaskedTextureWidget DataSource="{BannerImage}" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="145" SuggestedHeight="166" HorizontalAlignment="Center" VerticalAlignment="Center" Brush="PE.BannerButtonBrush" AdditionalArgs="@AdditionalArgs" ImageId="@Id" ImageTypeCode="@ImageTypeCode" OverlayTextureScale="1.8" />
+																				<TextWidget WidthSizePolicy="StretchToParent" Text="@FactionName" MarginTop="20"></TextWidget>
+																			</Children>
+																		</ListPanel>
+																		<BrushWidget Sprite="SPGeneral\MapOverlay\Encounter\WarIcon" HeightSizePolicy="Fixed" WidthSizePolicy="Fixed" HorizontalAlignment="Center" SuggestedHeight="70" SuggestedWidth="70" PositionYOffset="130" IsVisible="@ShowWarIcon"></BrushWidget>
+																	</Children>
+																</ButtonWidget>
+															</ItemTemplate>
+														</GridWidget>
+													</Children>
+												</Widget>
+											</Children>
+										</ScrollablePanel>
+
+										<ScrollbarWidget Id="VerticalScrollbar" WidthSizePolicy="Fixed" HeightSizePolicy="StretchToParent" SuggestedWidth="8" HorizontalAlignment="Right" VerticalAlignment="Center" AlignmentAxis="Vertical" Handle="VerticalScrollbarHandle">
+											<Children>
+												<Widget WidthSizePolicy="Fixed" HeightSizePolicy="StretchToParent" SuggestedWidth="4" HorizontalAlignment="Center" Sprite="BlankWhiteSquare_9" AlphaFactor="0.2" Color="#5a4033FF" />
+												<ImageWidget Id="VerticalScrollbarHandle" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="8" SuggestedHeight="10" HorizontalAlignment="Center" Brush="FaceGen.Scrollbar.Handle" />
+											</Children>
+										</ScrollbarWidget>
+									</Children>
+								</ListPanel>
+
+								<!-- Diplomacy Buttons -->
+								<ListPanel StackLayout.LayoutMethod="HorizontalLeftToRight" WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="200">
+									<Children>
+
+										<!-- Declare War -->
+										<ButtonWidget DoNotPassEventsToChildren="true" UpdateChildrenStates="true" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="180" SuggestedHeight="70" HorizontalAlignment="Center" Brush="WideButton.Flat" Command.Click="ExecuteDeclareWar" IsEnabled="@CanDeclareWar">
+											<Children>
+												<TextWidget WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren" VerticalAlignment="Center" Brush="MPLobby.PlayButton.Text" Brush.FontSize="22" Text="Declare War" />
+											</Children>
+										</ButtonWidget>
+
+										<!-- Make Peace -->
+										<ButtonWidget DoNotPassEventsToChildren="true" UpdateChildrenStates="true" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="180" SuggestedHeight="70" HorizontalAlignment="Center" Brush="WideButton.Flat" Command.Click="ExecuteMakePeace" IsEnabled="@CanDeclarePeace">
+											<Children>
+												<TextWidget WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren" VerticalAlignment="Center" Brush="MPLobby.PlayButton.Text" Brush.FontSize="22" Text="Make Peace" />
+											</Children>
+										</ButtonWidget>
+
+										<!-- Trade Agreement -->
+										<ButtonWidget DoNotPassEventsToChildren="true" UpdateChildrenStates="true" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="180" SuggestedHeight="70" HorizontalAlignment="Center" Brush="WideButton.Flat" Command.Click="ExecuteTradeAgreement" IsEnabled="@CanTrade">
+											<Children>
+												<TextWidget WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren" VerticalAlignment="Center" Brush="MPLobby.PlayButton.Text" Brush.FontSize="22" Text="Trade Agreement" />
+											</Children>
+										</ButtonWidget>
+
+										<!-- Form Alliance -->
+										<ButtonWidget DoNotPassEventsToChildren="true" UpdateChildrenStates="true" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="180" SuggestedHeight="70" HorizontalAlignment="Center" Brush="WideButton.Flat" Command.Click="ExecuteFormAlliance" IsEnabled="@CanFormAlliance">
+											<Children>
+												<TextWidget WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren" VerticalAlignment="Center" Brush="MPLobby.PlayButton.Text" Brush.FontSize="22" Text="Form Alliance" />
+											</Children>
+										</ButtonWidget>
+
+										<!-- Offer Vassalage -->
+										<ButtonWidget DoNotPassEventsToChildren="true" UpdateChildrenStates="true" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="180" SuggestedHeight="70" HorizontalAlignment="Center" Brush="WideButton.Flat" Command.Click="ExecuteOfferVassalage" IsEnabled="@CanOfferVassalage">
+											<Children>
+												<TextWidget WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren" VerticalAlignment="Center" Brush="MPLobby.PlayButton.Text" Brush.FontSize="22" Text="Offer Vassalage" />
+											</Children>
+										</ButtonWidget>
+
+									</Children>
+								</ListPanel>
+
+							</Children>
+						</ListPanel>
+					</Children>
+				</Standard.Window>
+			</Children>
+		</Widget>
+	</Window>
+</Prefab>
+

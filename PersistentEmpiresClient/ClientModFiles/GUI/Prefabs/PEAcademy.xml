@@ -1,0 +1,40 @@
+<Prefab>
+	<Window>
+		<Widget HorizontalAlignment="Center" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="1000" SuggestedHeight="700" VerticalAlignment="Center">
+			<Children>
+				<Standard.Window Parameter.Title="🏛️ Akademie">
+					<Children>
+						<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent">
+							<Children>
+
+								<!-- Einflussanzeige -->
+								<TextWidget WidthSizePolicy="StretchToParent" Text="💰 Einfluss: {@PlayerInfluence}" Brush.FontSize="22" MarginTop="15" />
+
+								<!-- Eintritts-Kosten für Akademie -->
+								<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren">
+									<Children>
+										<TextWidget Text="Eintritt: 500 Gold &amp; 50 Einfluss" Brush.FontSize="20" />
+										<ButtonWidget Text="🛡️ Akademie betreten" OnClick="EnterAcademy" />
+									</Children>
+								</ListPanel>
+
+								<!-- Blueprint Liste -->
+								<ListPanel Id="BlueprintList" DataSource="{AvailableBlueprints}" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren">
+									<ItemTemplate>
+										<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren">
+											<Children>
+												<TextWidget WidthSizePolicy="CoverChildren" Text="{BlueprintName}" Brush.FontSize="20" />
+												<ButtonWidget Text="🔓 Freischalten" OnClick="UnlockBlueprint({BlueprintID})" Condition="{!IsUnlocked}" />
+											</Children>
+										</ListPanel>
+									</ItemTemplate>
+								</ListPanel>
+
+							</Children>
+						</ListPanel>
+					</Children>
+				</Standard.Window>
+			</Children>
+		</Widget>
+	</Window>
+</Prefab>

@@ -1,0 +1,14 @@
+<GauntletMovie>
+	<Widget WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren" PositionYOffset="10" PositionXOffset="10" HorizontalAlignment="Left" VerticalAlignment="Top">
+		<Children>
+			<!-- Spieler Einfluss Anzeige -->
+			<ListPanel WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren">
+				<Children>
+					<TextWidget Text="🔹 Spieler Einfluss: {@PlayerInfluence}" Brush.FontSize="22" Brush.TextColor="White" />
+					<TextWidget Text="🏛️ Fraktion: {@FactionName}" Brush.FontSize="20" Brush.TextColor="Yellow" />
+					<TextWidget Text="⚖️ Fraktion Einfluss: {@FactionInfluence}" Brush.FontSize="22" Brush.TextColor="Cyan" />
+				</Children>
+			</ListPanel>
+		</Children>
+	</Widget>
+</GauntletMovie>

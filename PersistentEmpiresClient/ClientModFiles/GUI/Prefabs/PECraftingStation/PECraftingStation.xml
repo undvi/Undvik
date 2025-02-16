@@ -1,0 +1,109 @@
+<Prefab>
+	<Constants>
+		<!-- Definiere Standardgrößen für UI-Elemente -->
+		<Constant Name="Crafting.Window.Width" Value="1200" />
+		<Constant Name="Crafting.Window.Height" Value="800" />
+	</Constants>
+
+	<Window>
+		<Widget HorizontalAlignment="Center" HeightSizePolicy="StretchToParent" WidthSizePolicy="StretchToParent" MarginTop="20" MarginBottom="80">
+			<Children>
+
+				<!-- Inventar-Bereich -->
+				<Widget Id="InventoryPanel" DataSource="{PlayerInventory}" SuggestedHeight="300" SuggestedWidth="800" PositionYOffset="-120" MarginBottom="50">
+					<Children>
+						<Standard.Window Parameter.Title="Inventory">
+							<Children>
+								<GridWidget Id="InventoryGrid" DataSource="{InventoryItems}" DefaultCellHeight="140" DefaultCellWidth="140" HorizontalAlignment="Center" ColumnCount="5" MarginTop="30">
+									<ItemTemplate>
+										<PEInventorySlot DataSource="{..\..}" />
+									</ItemTemplate>
+								</GridWidget>
+							</Children>
+						</Standard.Window>
+					</Children>
+				</Widget>
+
+				<!-- Crafting UI -->
+				<Widget HorizontalAlignment="Center" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="@Crafting.Window.Width" SuggestedHeight="@Crafting.Window.Height" VerticalAlignment="Center" MarginBottom="50" PositionYOffset="150">
+					<Children>
+						<Standard.Window Parameter.Title="Crafting Station">
+							<Children>
+								<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" StackLayout.LayoutMethod="VerticalBottomToTop">
+									<Children>
+
+										<!-- Blueprint-Check -->
+										<TextWidget WidthSizePolicy="StretchToParent" Text="⚠️ Es können nur freigeschaltete Blueprints gecraftet werden!" Condition="!HasBlueprints" Brush.FontSize="20" Color="#FF0000FF" MarginTop="10" />
+
+										<!-- Filter & Suchbereich -->
+										<ListPanel MarginBottom="5" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren">
+											<Children>
+												<TextWidget WidthSizePolicy="StretchToParent" Text="🔎 Item-Suche" MarginTop="10" />
+												<Widget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="55" Sprite="General\CharacterCreation\name_input_area">
+													<Children>
+														<EditableTextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="ClanNaming.NameInput.Text" Text="@NameFilter" />
+													</Children>
+												</Widget>
+											</Children>
+										</ListPanel>
+
+										<!-- Filter für Waffen- und Rüstungsschmiede -->
+										<ListPanel MarginLeft="35" MarginBottom="5" MarginTop="15" WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren" HorizontalAlignment="Center">
+											<Children>
+												<ListPanel WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren">
+													<Children>
+														<TextWidget WidthSizePolicy="CoverChildren" Text="🏹 Wähle Waffen oder Rüstung" Brush.FontSize="20" />
+														<Standard.DropdownWithHorizontalControl Id="SchmiedeTypeFilter" Parameter.SelectorDataSource="{SchmiedeTypeFilter}" Parameter.ShowNextAndPrevious="false" />
+													</Children>
+												</ListPanel>
+											</Children>
+										</ListPanel>
+
+										<!-- Crafting-Liste -->
+										<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent">
+											<Children>
+												<ScrollablePanel Id="ScrollablePanel" WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent">
+													<Children>
+														<Widget Id="ClipRect" WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" ClipContents="true">
+															<Children>
+																<ListPanel Id="CraftList" DataSource="{FilteredItemList}" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" Condition="{CanCraftItem(@ItemID) || HasItem(@ItemID)}">
+																	<ItemTemplate>
+																		<PECraftingStationItem Parameter.ItemDataSource="{..\..}" />
+																	</ItemTemplate>
+																</ListPanel>
+															</Children>
+														</Widget>
+													</Children>
+												</ScrollablePanel>
+											</Children>
+										</ListPanel>
+
+										<!-- Crafting-Fortschritt -->
+										<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" IsVisible="@IsCrafting and (@CraftingProgress &lt; @CraftingDuration)">
+											<Children>
+												<TextWidget WidthSizePolicy="StretchToParent" Text="⏳ Herstellung läuft..." Brush.FontSize="20" Color="#FFD700FF" />
+												<FillBarWidget WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedHeight="20" SuggestedWidth="230" HorizontalAlignment="Center" VerticalAlignment="Top" FillWidget="FillWidget" InitialAmount="@PastDuration" MaxAmount="@CraftingDuration">
+													<Children>
+														<Widget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Sprite="StdAssets\Popup\progress_bar_canvas" />
+														<Widget ClipContents="true" Id="FillWidget" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedHeight="16">
+															<Children>
+																<Widget WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="230" SuggestedHeight="18" Sprite="StdAssets\Popup\progress_bar_fill" />
+															</Children>
+														</Widget>
+														<Widget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Sprite="StdAssets\Popup\progress_bar_frame" />
+													</Children>
+												</FillBarWidget>
+											</Children>
+										</ListPanel>
+
+									</Children>
+								</ListPanel>
+							</Children>
+						</Standard.Window>
+					</Children>
+				</Widget>
+
+			</Children>
+		</Widget>
+	</Window>
+</Prefab>
