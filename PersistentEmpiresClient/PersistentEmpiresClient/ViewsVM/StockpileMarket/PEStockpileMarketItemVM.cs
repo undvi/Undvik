@@ -7,122 +7,101 @@ namespace PersistentEmpires.Views.ViewsVM.StockpileMarket
 {
     public class PEStockpileMarketItemVM : ViewModel
     {
-        public MarketItem MarketItem;
-        public int ItemIndex;
+        public MarketItem MarketItem { get; private set; }
+        public int ItemIndex { get; private set; }
 
         private ImageIdentifierVM _imageIdentifier;
         private bool _isSelected;
         private string _itemName;
         private int _stock;
         private int _constant;
-        private Action<PEStockpileMarketItemVM> _executeSelect;
+        private readonly Action<PEStockpileMarketItemVM> _executeSelect;
+
         public PEStockpileMarketItemVM(MarketItem marketItem, int itemIndex, Action<PEStockpileMarketItemVM> executeSelect)
         {
-            this.MarketItem = marketItem;
-            this.ImageIdentifier = new ImageIdentifierVM(marketItem.Item);
-            this.ItemIndex = itemIndex;
-            this.Stock = marketItem.Stock;
-            this.Constant = marketItem.Constant;
-            this.ItemName = marketItem.Item.Name.ToString();
-            this._executeSelect = executeSelect;
+            MarketItem = marketItem ?? throw new ArgumentNullException(nameof(marketItem));
+            _executeSelect = executeSelect ?? throw new ArgumentNullException(nameof(executeSelect));
+
+            ImageIdentifier = new ImageIdentifierVM(marketItem.Item);
+            ItemIndex = itemIndex;
+            Stock = marketItem.Stock;
+            Constant = marketItem.Constant;
+            ItemName = marketItem.Item.Name.ToString();
         }
 
         [DataSourceProperty]
-        public int BuyPrice
-        {
-            get => this.MarketItem.BuyPrice();
-        }
+        public int BuyPrice => MarketItem.BuyPrice();
+
         [DataSourceProperty]
-        public int SellPrice
-        {
-            get => this.MarketItem.SellPrice();
-        }
+        public int SellPrice => MarketItem.SellPrice();
+
+        [DataSourceProperty]
         public ImageIdentifierVM ImageIdentifier
         {
-            get => this._imageIdentifier;
-            set
-            {
-                if (value != this._imageIdentifier)
-                {
-                    this._imageIdentifier = value;
-                    base.OnPropertyChangedWithValue(value, "ImageIdentifier");
-                }
-            }
+            get => _imageIdentifier;
+            set => SetProperty(ref _imageIdentifier, value, nameof(ImageIdentifier));
         }
+
         [DataSourceProperty]
         public int Stock
         {
-            get => this._stock;
+            get => _stock;
             set
             {
-                if (value != this._stock)
+                if (SetProperty(ref _stock, value, nameof(Stock)))
                 {
-                    this._stock = value;
-                    base.OnPropertyChangedWithValue(value, "Stock");
-                    base.OnPropertyChanged("BuyPrice");
-                    base.OnPropertyChanged("SellPrice");
+                    base.OnPropertyChanged(nameof(BuyPrice));
+                    base.OnPropertyChanged(nameof(SellPrice));
                 }
             }
         }
+
         [DataSourceProperty]
         public int Constant
         {
-            get => this._constant;
+            get => _constant;
             set
             {
-                if (value != this._constant)
+                if (SetProperty(ref _constant, value, nameof(Constant)))
                 {
-                    this._constant = value;
-                    base.OnPropertyChangedWithValue(value, "Constant");
-                    base.OnPropertyChanged("BuyPrice");
-                    base.OnPropertyChanged("SellPrice");
+                    base.OnPropertyChanged(nameof(BuyPrice));
+                    base.OnPropertyChanged(nameof(SellPrice));
                 }
             }
         }
+
         [DataSourceProperty]
         public string ItemName
         {
-            get => this._itemName;
-            set
-            {
-                if (value != this._itemName)
-                {
-                    this._itemName = value;
-                    base.OnPropertyChangedWithValue(value, "ItemName");
-                }
-            }
+            get => _itemName;
+            set => SetProperty(ref _itemName, value, nameof(ItemName));
         }
+
         [DataSourceProperty]
         public bool IsSelected
         {
-            get => this._isSelected;
-            set
-            {
-                if (value != this._isSelected)
-                {
-                    this._isSelected = value;
-                    base.OnPropertyChangedWithValue(value, "IsSelected");
-                }
-            }
+            get => _isSelected;
+            set => SetProperty(ref _isSelected, value, nameof(IsSelected));
         }
 
-        public void ExecuteSelect()
-        {
-            this._executeSelect(this);
-        }
+        public void ExecuteSelect() => _executeSelect(this);
+
         public void ExecuteHoverStart()
         {
-            if (this.MarketItem.Item != null)
+            if (MarketItem?.Item != null)
             {
-                InformationManager.ShowTooltip(typeof(ItemObject), new object[] {
-                    new EquipmentElement(this.MarketItem.Item)
-                });
+                InformationManager.ShowTooltip(typeof(ItemObject), new object[] { new EquipmentElement(MarketItem.Item) });
             }
         }
 
-        public void ExecuteHoverEnd()
+        public void ExecuteHoverEnd() => InformationManager.HideTooltip();
+
+        private bool SetProperty<T>(ref T field, T newValue, string propertyName)
         {
-            InformationManager.HideTooltip();
+            if (EqualityComparer<T>.Default.Equals(field, newValue)) return false;
+            field = newValue;
+            base.OnPropertyChanged(propertyName);
+            return true;
         }
     }
 }

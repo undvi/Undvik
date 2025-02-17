@@ -1,113 +1,176 @@
-﻿using PersistentEmpiresLib.PersistentEmpiresMission.MissionBehaviors;
+﻿using Dapper;
+using PersistentEmpiresLib.Database.DBEntities;
+using PersistentEmpiresLib.PersistentEmpiresMission.MissionBehaviors;
+using PersistentEmpiresLib.SceneScripts;
+using PersistentEmpiresLib.SceneScripts.Extensions;
 using System;
 using System.Collections.Generic;
-using System.Xml;
-using TaleWorlds.Core;
-using TaleWorlds.Engine;
-using TaleWorlds.InputSystem;
+using System.Data.SQLite;
+using System.Linq;
 using TaleWorlds.Library;
-using TaleWorlds.Localization;
-using TaleWorlds.ModuleManager;
-using TaleWorlds.MountAndBlade;
 
-namespace PersistentEmpiresLib.SceneScripts
+namespace PersistentEmpiresSave.Database.Repositories
 {
-    public class PE_TradeCenter : PE_UsableFromDistance
+    public class DBMarketRepository
     {
-        public static int MAX_STOCK_COUNT = 1000;
-        public string XmlFile = "exampletradecenter";
-        public List<MarketItem> MarketItems { get; private set; }
-        private TradingCenterBehavior tradingCenterBehavior;
-        private CastlesBehavior castlesBehavior;
-        public int RandomizeDelayMinutes = 60;
-        public int CastleIndex = 0;
-        public int RandomMinStock = 10;
-        public int RandomMaxStock = 300;
-        protected override bool LockUserFrames
+        private static readonly string dbPath = "MarketDatabase.sqlite";
+
+        public static void Initialize()
         {
-            get
-            {
-                return false;
-            }
-        }
-        protected override bool LockUserPositions
-        {
-            get
-            {
-                return false;
-            }
+            SaveSystemBehavior.OnGetAllStockpileMarkets += GetAllMarketStands;
+            SaveSystemBehavior.OnGetStockpileMarket += GetMarketStand;
+            SaveSystemBehavior.OnUpsertStockpileMarkets += UpsertMarketStands;
+
+            InitializeDatabase();
+            CheckExpiredMarketStands();
         }
 
-        public void Randomize(Random randomizer)
+        /// <summary>
+        /// Erstellt die Markt- und Gebäude-Datenbank, falls sie nicht existiert.
+        /// </summary>
+        private static void InitializeDatabase()
         {
-            foreach (MarketItem marketItem in this.MarketItems)
+            using (var connection = new SQLiteConnection($"Data Source={dbPath};Version=3;"))
             {
-                int randomStock = randomizer.Next(this.RandomMinStock, this.RandomMaxStock);
-                marketItem.UpdateReserve(randomStock);
-            }
-        }
+                connection.Open();
+                connection.Execute("PRAGMA foreign_keys = ON;");
 
-        protected void LoadMarketItems(string innerText, int tier)
-        {
+                using (var command = new SQLiteCommand(connection))
+                {
+                    Debug.Print("[DB] Initialisiere MarketDatabase...");
 
-            if (innerText == "") return;
-            foreach (string marketItemStr in innerText.Trim().Split('|'))
-            {
-                string[] values = marketItemStr.Split('*');
-                string itemId = values[0];
-                int minPrice = int.Parse(values[1]);
-                int maxPrice = int.Parse(values[2]);
-                int stability = values.Length >= 4 ? int.Parse(values[3]) : 10;
-                this.MarketItems.Add(new MarketItem(itemId, maxPrice, minPrice, stability, tier));
-            }
-        }
+                    // Marktstände-Tabelle
+                    command.CommandText = @"
+                        CREATE TABLE IF NOT EXISTS MarketStands (
+                            StandID INTEGER PRIMARY KEY, 
+                            Owner TEXT, 
+                            IsOccupied BOOLEAN, 
+                            IsOwned BOOLEAN,
+                            RentPrice INTEGER,
+                            RentTime INTEGER,
+                            RentStartDate TEXT,
+                            TaxRate REAL
+                        );";
+                    command.ExecuteNonQuery();
 
+                    // Fraktionssteuern-Tabelle
+                    command.CommandText = @"
+                        CREATE TABLE IF NOT EXISTS FactionTaxes (
+                            FactionName TEXT PRIMARY KEY, 
+                            TaxRate REAL
+                        );";
+                    command.ExecuteNonQuery();
 
-        protected override void OnInit()
-        {
-            base.OnInit();
-            TextObject actionMessage = new TextObject("Browse Trading Center");
-            base.ActionMessage = actionMessage;
-            TextObject descriptionMessage = new TextObject("Press {KEY} To Browse");
-            descriptionMessage.SetTextVariable("KEY", HyperlinkTexts.GetKeyHyperlinkText(HotKeyManager.GetHotKeyId("CombatHotKeyCategory", 13)));
-            base.DescriptionMessage = descriptionMessage;
-            this.tradingCenterBehavior = Mission.Current.GetMissionBehavior<TradingCenterBehavior>();
-            this.castlesBehavior = Mission.Current.GetMissionBehavior<CastlesBehavior>();
-            string xmlPath = ModuleHelper.GetXmlPath("PersistentEmpires", "Markets/" + this.XmlFile);
-            XmlDocument xmlDocument = new XmlDocument();
-            xmlDocument.Load(xmlPath);
-            this.MarketItems = new List<MarketItem>();
-            this.LoadMarketItems(xmlDocument.SelectSingleNode("/Market/Tier1Items").InnerText, 1);
-            this.LoadMarketItems(xmlDocument.SelectSingleNode("/Market/Tier2Items").InnerText, 2);
-            this.LoadMarketItems(xmlDocument.SelectSingleNode("/Market/Tier3Items").InnerText, 3);
-            this.LoadMarketItems(xmlDocument.SelectSingleNode("/Market/Tier4Items").InnerText, 4);
-
-        }
-        public override void OnUse(Agent userAgent)
-        {
-            if (!base.IsUsable(userAgent))
-            {
-                userAgent.StopUsingGameObjectMT(false);
-                return;
-            }
-            base.OnUse(userAgent);
-            Debug.Print("[USING LOG] AGENT USE " + this.GetType().Name);
-
-            if (GameNetwork.IsServer)
-            {
-                this.tradingCenterBehavior.OpenTradingCenterForPeer(this, userAgent.MissionPeer.GetNetworkPeer());
-                userAgent.StopUsingGameObjectMT(true);
+                    // Gebäude-Tabelle
+                    command.CommandText = @"
+                        CREATE TABLE IF NOT EXISTS Buildings (
+                            ZoneID INTEGER PRIMARY KEY, 
+                            Faction TEXT, 
+                            BuildingOwner TEXT,
+                            BuildingType TEXT, 
+                            IsCompleted BOOLEAN,
+                            BuildingCostGold INTEGER,
+                            BuildingCostInfluence INTEGER,
+                            BuildingLevel INTEGER,
+                            ConstructionProgress INTEGER,
+                            IsPublic BOOLEAN
+                        );";
+                    command.ExecuteNonQuery();
+                }
             }
         }
 
-        public string GetCastleName()
+        /// <summary>
+        /// Überprüft und setzt abgelaufene Marktstände zurück.
+        /// </summary>
+        private static void CheckExpiredMarketStands()
         {
-            return this.castlesBehavior.castles[this.CastleIndex].CastleName;
+            using (var connection = new SQLiteConnection($"Data Source={dbPath};Version=3;"))
+            {
+                connection.Open();
+                var expiredStands = connection.Query<int>(
+                    "SELECT StandID FROM MarketStands WHERE RentStartDate IS NOT NULL AND RentTime > 0 AND (strftime('%s','now') - strftime('%s', RentStartDate)) > RentTime"
+                ).ToList();
+
+                foreach (var standId in expiredStands)
+                {
+                    Debug.Print($"[DB] Marktstand {standId} Mietzeit abgelaufen, wird freigegeben.");
+                    connection.Execute("UPDATE MarketStands SET Owner = NULL, IsOccupied = FALSE WHERE StandID = @StandID", new { StandID = standId });
+                }
+            }
         }
 
-        public override string GetDescriptionText(GameEntity gameEntity = null)
+        /// <summary>
+        /// Gibt alle Marktstände aus der Datenbank zurück.
+        /// </summary>
+        public static IEnumerable<DBStockpileMarket> GetAllMarketStands()
         {
-            return "Trading Center";
+            Debug.Print("[DB] Lade alle Marktstände...");
+            using (var connection = new SQLiteConnection($"Data Source={dbPath};Version=3;"))
+            {
+                return connection.Query<DBStockpileMarket>("SELECT * FROM MarketStands");
+            }
+        }
+
+        /// <summary>
+        /// Lädt einen einzelnen Marktstand basierend auf der `MissionObjectHash`.
+        /// </summary>
+        public static DBStockpileMarket GetMarketStand(PE_StockpileMarket marketStand)
+        {
+            Debug.Print($"[DB] Lade Marktstand ({marketStand.GetMissionObjectHash()})");
+            using (var connection = new SQLiteConnection($"Data Source={dbPath};Version=3;"))
+            {
+                return connection.QueryFirstOrDefault<DBStockpileMarket>(
+                    "SELECT * FROM MarketStands WHERE MissionObjectHash = @MissionObjectHash",
+                    new { MissionObjectHash = marketStand.GetMissionObjectHash() }
+                );
+            }
+        }
+
+        /// <summary>
+        /// Fügt Marktstände zur Datenbank hinzu oder aktualisiert bestehende.
+        /// </summary>
+        public static void UpsertMarketStands(List<PE_StockpileMarket> markets)
+        {
+            Debug.Print($"[DB] Speichere {markets.Count} Marktstände...");
+            if (markets.Any())
+            {
+                using (var connection = new SQLiteConnection($"Data Source={dbPath};Version=3;"))
+                {
+                    foreach (var market in markets)
+                    {
+                        connection.Execute(@"
+                            INSERT INTO MarketStands (MissionObjectHash, MarketItemsSerialized) 
+                            VALUES (@MissionObjectHash, @MarketItemsSerialized) 
+                            ON CONFLICT(MissionObjectHash) DO UPDATE 
+                            SET MarketItemsSerialized = excluded.MarketItemsSerialized",
+                            new { market.MissionObjectHash, market.MarketItemsSerialized });
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Speichert oder aktualisiert ein Gebäude in der Datenbank.
+        /// </summary>
+        public static void SaveBuilding(BuildingZone building)
+        {
+            using (var connection = new SQLiteConnection($"Data Source={dbPath};Version=3;"))
+            {
+                connection.Execute(@"
+                    INSERT INTO Buildings (ZoneID, Faction, BuildingOwner, BuildingType, IsCompleted, BuildingCostGold, BuildingCostInfluence, BuildingLevel, ConstructionProgress, IsPublic) 
+                    VALUES (@ZoneID, @Faction, @BuildingOwner, @BuildingType, @IsCompleted, @BuildingCostGold, @BuildingCostInfluence, @BuildingLevel, @ConstructionProgress, @IsPublic)
+                    ON CONFLICT(ZoneID) DO UPDATE
+                    SET BuildingType = excluded.BuildingType,
+                        BuildingOwner = excluded.BuildingOwner,
+                        IsCompleted = excluded.IsCompleted,
+                        BuildingCostGold = excluded.BuildingCostGold,
+                        BuildingCostInfluence = excluded.BuildingCostInfluence,
+                        BuildingLevel = excluded.BuildingLevel,
+                        ConstructionProgress = excluded.ConstructionProgress,
+                        IsPublic = excluded.IsPublic",
+                    building);
+            }
         }
     }
 }

@@ -32,40 +32,41 @@ namespace PersistentEmpiresLib.SceneScripts
         protected override void OnInit()
         {
             this.HitPoint = 0;
-            this.ParseRepairReceipts();
+            ParseRepairReceipts();
         }
+
         private void ParseRepairReceipts()
         {
-            string[] repairReceipt = this.RepairItemRecipies.Split(',');
-            foreach (string receipt in repairReceipt)
+            receipt.Clear();
+            foreach (string entry in RepairItemRecipies.Split(','))
             {
-                string[] inflictedReceipt = receipt.Split('*');
-                string receiptId = inflictedReceipt[0];
-                int count = int.Parse(inflictedReceipt[1]);
-                this.receipt.Add(new RepairReceipt(receiptId, count));
+                string[] parts = entry.Split('*');
+                if (parts.Length == 2 && int.TryParse(parts[1], out int count))
+                {
+                    receipt.Add(new RepairReceipt(parts[0], count));
+                }
+                else
+                {
+                    Debug.Print($"[Error] Ungültige Reparatur-Definition: {entry}");
+                }
             }
         }
 
         protected override void OnTick(float dt)
         {
-            try
+            if (!initialized)
             {
-                if (initialized == false)
-                {
-                    this.batteringRam = base.GameEntity.Parent.GetFirstScriptInFamilyDescending<PE_BatteringRam>();
-                    if (this.batteringRam == null) return;
-                    this.batteringRam.DestructionComponent.OnDestroyed += this.BatteringRamOnDestroyed;
-                    this.batteringRam.GameEntity.SetVisibilityExcludeParents(false);
-                    initialized = true;
-                }
+                batteringRam = base.GameEntity.Parent.GetFirstScriptInFamilyDescending<PE_BatteringRam>();
+                if (batteringRam == null) return;
+
+                batteringRam.DestructionComponent.OnDestroyed += BatteringRamOnDestroyed;
+                batteringRam.GameEntity.SetVisibilityExcludeParents(false);
+                initialized = true;
             }
-            catch (Exception e)
+
+            if (batteringRamDestroyed && DateTimeOffset.UtcNow.ToUnixTimeSeconds() >= resetAt)
             {
-            }
-            if (this.batteringRamDestroyed == true && DateTimeOffset.UtcNow.ToUnixTimeSeconds() >= this.resetAt)
-            {
-                // Reset the shit man.
-                this.Reset();
+                Reset();
                 if (GameNetwork.IsServer)
                 {
                     GameNetwork.BeginBroadcastModuleEvent();
@@ -74,44 +75,47 @@ namespace PersistentEmpiresLib.SceneScripts
                 }
             }
         }
-        public override ScriptComponentBehavior.TickRequirement GetTickRequirement() => initialized ? ScriptComponentBehavior.TickRequirement.None : ScriptComponentBehavior.TickRequirement.Tick;
+
+        public override ScriptComponentBehavior.TickRequirement GetTickRequirement()
+        {
+            return initialized ? ScriptComponentBehavior.TickRequirement.None : ScriptComponentBehavior.TickRequirement.Tick;
+        }
+
         private void BatteringRamOnDestroyed(DestructableComponent target, Agent attackerAgent, in MissionWeapon weapon, ScriptComponentBehavior attackerScriptComponentBehavior, int inflictedDamage)
         {
-            this.batteringRamDestroyed = true;
-            this.resetAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + 5;
+            batteringRamDestroyed = true;
+            resetAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + 5;
         }
 
         public void Reset()
         {
-            MethodInfo resetMethod = this.batteringRam.GetType().GetMethod("OnMissionReset", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            resetMethod.Invoke(this.batteringRam, new object[] { });
-            this.batteringRam.DestructionComponent.Reset();
-            this.batteringRam.GameEntity.SetVisibilityExcludeParents(false);
-            this.batteringRamBuilt = false;
-            this.SetHitPoint(0, new Vec3(0, 0, 0), null);
-            this.batteringRamDestroyed = false;
-        }
+            if (batteringRam == null) return;
 
+            MethodInfo resetMethod = batteringRam.GetType().GetMethod("OnMissionReset", BindingFlags.NonPublic | BindingFlags.Instance);
+            resetMethod?.Invoke(batteringRam, new object[] { });
+
+            batteringRam.DestructionComponent.Reset();
+            batteringRam.GameEntity.SetVisibilityExcludeParents(false);
+            batteringRamBuilt = false;
+            SetHitPoint(0, new Vec3(0, 0, 0), null);
+            batteringRamDestroyed = false;
+        }
 
         public override void SetHitPoint(float hitPoint, Vec3 impactDirection, ScriptComponentBehavior attackerScriptComponentBehavior)
         {
-            if (hitPoint <= 0) hitPoint = 0;
-            if (hitPoint >= this.MaxHitPoint) hitPoint = this.MaxHitPoint;
+            if (hitPoint < 0) hitPoint = 0;
+            if (hitPoint > MaxHitPoint) hitPoint = MaxHitPoint;
+            if (HitPoint == hitPoint) return; // Kein unnötiges Update
 
-            this.HitPoint = hitPoint;
-            if (this.batteringRamBuilt == false && this.HitPoint >= this.MaxHitPoint)
+            HitPoint = hitPoint;
+
+            if (!batteringRamBuilt && HitPoint >= MaxHitPoint)
             {
-                if (this.ParticleEffectOnRepair != "")
-                {
-                    Mission.Current.Scene.CreateBurstParticle(ParticleSystemManager.GetRuntimeIdByName(this.ParticleEffectOnRepair), base.GameEntity.GetGlobalFrame());
-                }
-                if (this.SoundEffectOnRepair != "")
-                {
-                    Mission.Current.MakeSound(SoundEvent.GetEventIdFromString(this.SoundEffectOnRepair), base.GameEntity.GetGlobalFrame().origin, false, true, -1, -1);
-                }
-                this.batteringRam.GameEntity.SetVisibilityExcludeParents(true);
+                PlayRepairEffects();
+                batteringRam?.GameEntity.SetVisibilityExcludeParents(true);
                 batteringRamBuilt = true;
             }
+
             if (GameNetwork.IsServer)
             {
                 GameNetwork.BeginBroadcastModuleEvent();
@@ -119,50 +123,78 @@ namespace PersistentEmpiresLib.SceneScripts
                 GameNetwork.EndBroadcastModuleEvent(GameNetwork.EventBroadcastFlags.AddToMissionRecord, null);
             }
         }
+
+        private void PlayRepairEffects()
+        {
+            if (!string.IsNullOrEmpty(ParticleEffectOnRepair))
+            {
+                Mission.Current.Scene.CreateBurstParticle(ParticleSystemManager.GetRuntimeIdByName(ParticleEffectOnRepair), base.GameEntity.GetGlobalFrame());
+            }
+            if (!string.IsNullOrEmpty(SoundEffectOnRepair))
+            {
+                Mission.Current.MakeSound(SoundEvent.GetEventIdFromString(SoundEffectOnRepair), base.GameEntity.GetGlobalFrame().origin, false, true, -1, -1);
+            }
+        }
+
         protected override bool OnHit(Agent attackerAgent, int damage, Vec3 impactPosition, Vec3 impactDirection, in MissionWeapon weapon, ScriptComponentBehavior attackerScriptComponentBehavior, out bool reportDamage)
         {
             reportDamage = true;
-            MissionWeapon missionWeapon = weapon;
-            WeaponComponentData currentUsageItem = missionWeapon.CurrentUsageItem;
-            if (
-                attackerAgent != null &&
-                attackerAgent.Character.GetSkillValue(DefaultSkills.Engineering) >= this.RequiredEngineeringSkillForRepair &&
-                missionWeapon.Item != null &&
-                missionWeapon.Item.StringId == this.RepairItem &&
-                attackerAgent.IsHuman &&
-                attackerAgent.IsPlayerControlled &&
-                this.HitPoint != this.MaxHitPoint &&
-                this.batteringRamBuilt == false
-                )
+            if (attackerAgent == null || weapon.Item == null || !attackerAgent.IsHuman || !attackerAgent.IsPlayerControlled)
+                return false;
+
+            NetworkCommunicator player = attackerAgent.MissionPeer.GetNetworkPeer();
+            bool isAdmin = Main.IsPlayerAdmin(player);
+
+            // Admin-Hammer für sofortiges Bauen
+            if (isAdmin && weapon.Item.StringId == "pe_adminhammer")
             {
-                reportDamage = false;
-                NetworkCommunicator player = attackerAgent.MissionPeer.GetNetworkPeer();
-                PersistentEmpireRepresentative persistentEmpireRepresentative = player.GetComponent<PersistentEmpireRepresentative>();
-                if (persistentEmpireRepresentative == null) return false;
-                bool playerHasAllItems = this.receipt.All((r) => persistentEmpireRepresentative.GetInventory().IsInventoryIncludes(r.RepairItem, r.NeededCount));
-                if (!playerHasAllItems)
-                {
-                    //TODO: Inform player
-                    InformationComponent.Instance.SendMessage("Required Items:", 0x02ab89d9, player);
-                    foreach (RepairReceipt r in this.receipt)
-                    {
-                        InformationComponent.Instance.SendMessage(r.NeededCount + " * " + r.RepairItem.Name.ToString(), 0x02ab89d9, player);
-                    }
-                    return false;
-                }
-                foreach (RepairReceipt r in this.receipt)
-                {
-                    persistentEmpireRepresentative.GetInventory().RemoveCountedItem(r.RepairItem, r.NeededCount);
-                }
-                InformationComponent.Instance.SendMessage((this.HitPoint + this.RepairDamage).ToString() + "/" + this.MaxHitPoint + ", repaired", 0x02ab89d9, player);
-                this.SetHitPoint(this.HitPoint + this.RepairDamage, impactDirection, attackerScriptComponentBehavior);
-                if (GameNetwork.IsServer)
-                {
-                    // LoggerHelper.LogAnAction(attackerAgent.MissionPeer.GetNetworkPeer(), LogAction.PlayerRepairesTheDestructable, null, new object[] { this.GetType().Name });
-                }
+                SetHitPoint(MaxHitPoint, impactDirection, attackerScriptComponentBehavior);
+                return true;
             }
 
-            return true;
+            if (weapon.Item.StringId == RepairItem &&
+                attackerAgent.Character.GetSkillValue(DefaultSkills.Engineering) >= RequiredEngineeringSkillForRepair &&
+                !batteringRamBuilt)
+            {
+                if (!HasRequiredMaterials(player))
+                {
+                    InformPlayerMissingResources(player);
+                    return false;
+                }
+
+                ConsumeRepairMaterials(player);
+                SetHitPoint(HitPoint + RepairDamage, impactDirection, attackerScriptComponentBehavior);
+                InformationComponent.Instance.SendMessage($"🔧 {HitPoint}/{MaxHitPoint} repariert!", 0x02ab89d9, player);
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool HasRequiredMaterials(NetworkCommunicator player)
+        {
+            PersistentEmpireRepresentative rep = player.GetComponent<PersistentEmpireRepresentative>();
+            return rep != null && receipt.All(r => rep.GetInventory().IsInventoryIncludes(r.RepairItem, r.NeededCount));
+        }
+
+        private void ConsumeRepairMaterials(NetworkCommunicator player)
+        {
+            PersistentEmpireRepresentative rep = player.GetComponent<PersistentEmpireRepresentative>();
+            if (rep == null) return;
+
+            foreach (RepairReceipt r in receipt)
+            {
+                rep.GetInventory().RemoveCountedItem(r.RepairItem, r.NeededCount);
+            }
+        }
+
+        private void InformPlayerMissingResources(NetworkCommunicator player)
+        {
+            InformationComponent.Instance.SendMessage("⚠️ Fehlende Ressourcen für die Reparatur:", 0x02ab89d9, player);
+            foreach (RepairReceipt r in receipt)
+            {
+                InformationComponent.Instance.SendMessage($"❌ {r.NeededCount}x {r.RepairItem.Name}", 0x02ab89d9, player);
+            }
         }
     }
 }

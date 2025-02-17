@@ -1,0 +1,48 @@
+<Prefab>
+	<Window>
+		<Widget HorizontalAlignment="Center" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="900" SuggestedHeight="600" VerticalAlignment="Center">
+			<Children>
+				<Standard.Window Parameter.Title="🏗️ Bausystem">
+					<Children>
+						<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent">
+							<Children>
+
+								<!-- Spieler Ressourcen -->
+								<TextWidget WidthSizePolicy="StretchToParent" Text="💰 Gold: {@PlayerGold} | 🏛️ Einfluss: {@PlayerInfluence}" Brush.FontSize="22" MarginTop="10" />
+
+								<!-- Auswahl Gebäude -->
+								<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren">
+									<TextWidget WidthSizePolicy="StretchToParent" Text="🏠 Wähle ein Gebäude:" Brush.FontSize="20" MarginBottom="5"/>
+									<Standard.DropdownWithHorizontalControl Parameter.SelectorDataSource="{AvailableBuildings}" Text="{SelectedBuilding.BuildingName}" />
+								</ListPanel>
+
+								<!-- Gebäudeinfos -->
+								<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren">
+									<TextWidget WidthSizePolicy="StretchToParent" Text="📋 Bauinfo: {SelectedBuilding.BuildingName}" Brush.FontSize="18"/>
+									<TextWidget WidthSizePolicy="StretchToParent" Text="💰 Kosten: {SelectedBuilding.GoldCost} Gold | 🏛️ {SelectedBuilding.InfluenceCost} Einfluss" Brush.FontSize="16"/>
+									<TextWidget WidthSizePolicy="StretchToParent" Text="⏳ Bauzeit: {SelectedBuilding.BuildTime} Sekunden" Brush.FontSize="16"/>
+								</ListPanel>
+
+								<!-- Auswahl Bauzone -->
+								<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren">
+									<TextWidget WidthSizePolicy="StretchToParent" Text="📍 Wähle eine Bauzone:" Brush.FontSize="20" MarginBottom="5"/>
+									<Standard.DropdownWithHorizontalControl Parameter.SelectorDataSource="{AvailableZones}" Text="{SelectedZone.ZoneName}" />
+								</ListPanel>
+
+								<!-- Bau-Button -->
+								<ButtonWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="60"
+									Brush="{SelectedBuilding.HasEnoughResources ? 'WideButton.Flat.Green' : 'WideButton.Flat.Red'}"
+									Command.Click="ConstructBuilding({SelectedBuilding.BuildingType}, {SelectedZone.ZoneID})">
+									<Children>
+										<TextWidget Text="🔨 Bauen" Brush="MPLobby.PlayButton.Text" Brush.FontSize="25" />
+									</Children>
+								</ButtonWidget>
+
+							</Children>
+						</ListPanel>
+					</Children>
+				</Standard.Window>
+			</Children>
+		</Widget>
+	</Window>
+</Prefab>

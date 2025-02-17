@@ -16,116 +16,108 @@ namespace PersistentEmpires.Views.Views
     public class PEStockpileMarketScreen : PEBaseItemList<PEStockpileMarketVM, PEStockpileMarketItemVM, MarketItem>
     {
         private StockpileMarketComponent _stockpileMarketComponent;
-        private PE_StockpileMarket ActiveEntity;
+        private PE_StockpileMarket _activeEntity;
 
         public override void OnMissionScreenInitialize()
         {
             base.OnMissionScreenInitialize();
-            this._stockpileMarketComponent = base.Mission.GetMissionBehavior<StockpileMarketComponent>();
-            this._stockpileMarketComponent.OnStockpileMarketOpen += this.OnOpen;
-            this._stockpileMarketComponent.OnStockpileMarketUpdate += this.OnUpdate;
-            this._stockpileMarketComponent.OnStockpileMarketUpdateMultiHandler += this.OnUpdateMulti;
-            this._dataSource = new PEStockpileMarketVM(this.HandleClickItem);
+            _stockpileMarketComponent = Mission.GetMissionBehavior<StockpileMarketComponent>();
+
+            _stockpileMarketComponent.OnStockpileMarketOpen += OnOpen;
+            _stockpileMarketComponent.OnStockpileMarketUpdate += OnUpdate;
+            _stockpileMarketComponent.OnStockpileMarketUpdateMultiHandler += OnUpdateMulti;
+
+            _dataSource = new PEStockpileMarketVM(HandleClickItem);
         }
 
         private void OnUpdateMulti(PE_StockpileMarket stockpileMarket, List<int> indexes, List<int> stocks)
         {
-            if (this.IsActive)
+            if (!IsActive || indexes.Count != stocks.Count) return;
+
+            for (int i = 0; i < indexes.Count; i++)
             {
-                for (int i = 0; i < indexes.Count; i++)
-                {
-                    int index = indexes[i];
-                    int stock = stocks[i];
-                    this._dataSource.ItemsList[index].Stock = stock;
-                }
-                this._dataSource.OnPropertyChanged("FilteredItemList");
+                if (indexes[i] < 0 || indexes[i] >= _dataSource.ItemsList.Count) continue;
+                _dataSource.ItemsList[indexes[i]].Stock = stocks[i];
             }
+
+            _dataSource.OnPropertyChanged(nameof(_dataSource.FilteredItemList));
         }
 
         private void OnUpdate(PE_StockpileMarket stockpileMarket, int itemIndex, int newStock)
         {
-            if (this.IsActive)
-            {
-                Console.WriteLine(itemIndex);
-                Console.WriteLine(this._dataSource.FilteredItemList.ToString());
-                this._dataSource.ItemsList[itemIndex].Stock = newStock;
-                this._dataSource.OnPropertyChanged("FilteredItemList");
-            }
+            if (!IsActive || itemIndex < 0 || itemIndex >= _dataSource.ItemsList.Count) return;
+            _dataSource.ItemsList[itemIndex].Stock = newStock;
+            _dataSource.OnPropertyChanged(nameof(_dataSource.FilteredItemList));
         }
 
         public override void OnAgentRemoved(Agent affectedAgent, Agent affectorAgent, AgentState agentState, KillingBlow blow)
         {
-            if (affectedAgent.IsMine)
-            {
-                this.Close();
-            }
+            if (affectedAgent.IsMine) Close();
         }
 
         public override void HandleClickItem(PEItemVM clickedSlot)
         {
-            if (this._gauntletLayer.Input.IsShiftDown())
+            if (_gauntletLayer.Input.IsShiftDown())
             {
-                GameNetwork.BeginModuleEventAsClient();
-                GameNetwork.WriteMessage(new InventoryHotkey(clickedSlot.DropTag));
-                GameNetwork.EndModuleEventAsClient();
+                SendNetworkMessage(new InventoryHotkey(clickedSlot.DropTag));
             }
-            if (this._gauntletLayer.Input.IsControlDown() && clickedSlot.Item != null && clickedSlot.Count > 0)
+            else if (_gauntletLayer.Input.IsControlDown() && clickedSlot.Item != null && clickedSlot.Count > 0)
             {
-                PEStockpileMarketItemVM item = _dataSource.FilteredItemList.ToList().FirstOrDefault(itemVm => itemVm.MarketItem.Item.StringId == clickedSlot.Item.StringId);
-                if (item != null) this.Sell(item);
+                var item = _dataSource.FilteredItemList.FirstOrDefault(i => i.MarketItem.Item.StringId == clickedSlot.Item.StringId);
+                if (item != null) Sell(item);
             }
         }
 
         public override void Close()
         {
-            if (this.IsActive)
-            {
-                GameNetwork.BeginModuleEventAsClient();
-                GameNetwork.WriteMessage(new RequestCloseStockpileMarket(this.ActiveEntity));
-                GameNetwork.EndModuleEventAsClient();
-                this.CloseAux();
-            }
+            if (!IsActive || _activeEntity == null) return;
+            SendNetworkMessage(new RequestCloseStockpileMarket(_activeEntity));
+            CloseAux();
         }
 
         private void OnOpen(PE_StockpileMarket stockpileMarket, Inventory playerInventory)
         {
-            if (this.IsActive) return;
-            this.ActiveEntity = stockpileMarket;
-            this._dataSource.StockpileMarket = stockpileMarket;
-            this._dataSource.Buy = Buy;
-            this._dataSource.Sell = Sell;
-            this._dataSource.UnpackBoxes = UnpackBoxes;
+            if (IsActive) return;
+
+            _activeEntity = stockpileMarket;
+            _dataSource.StockpileMarket = stockpileMarket;
+            _dataSource.Buy = Buy;
+            _dataSource.Sell = Sell;
+            _dataSource.UnpackBoxes = UnpackBoxes;
+
             base.OnOpen(stockpileMarket.MarketItems, playerInventory, "PEStockpileMarket");
         }
 
         public void Buy(PEStockpileMarketItemVM stockpileMarketItemVM)
         {
-            GameNetwork.BeginModuleEventAsClient();
-            GameNetwork.WriteMessage(new RequestBuyItem(this.ActiveEntity, stockpileMarketItemVM.ItemIndex));
-            GameNetwork.EndModuleEventAsClient();
+            if (_activeEntity != null)
+                SendNetworkMessage(new RequestBuyItem(_activeEntity, stockpileMarketItemVM.ItemIndex));
         }
 
         public void Sell(PEStockpileMarketItemVM stockpileMarketItemVM)
         {
-            GameNetwork.BeginModuleEventAsClient();
-            GameNetwork.WriteMessage(new RequestSellItem(this.ActiveEntity, stockpileMarketItemVM.ItemIndex));
-            GameNetwork.EndModuleEventAsClient();
+            if (_activeEntity != null)
+                SendNetworkMessage(new RequestSellItem(_activeEntity, stockpileMarketItemVM.ItemIndex));
         }
 
         public void UnpackBoxes()
         {
-            List<PEItemVM> items = this._dataSource.PlayerInventory.InventoryItems.ToList();
-            for (int i = 0; i < items.Count; i++)
+            if (_activeEntity == null) return;
+
+            var boxItem = _dataSource.PlayerInventory.InventoryItems
+                .FirstOrDefault(item => item.Count > 0 && _activeEntity.CraftingBoxes.Any(c => c.BoxItem.StringId == item.Item.StringId));
+
+            if (boxItem != null)
             {
-                PEItemVM item = items[i];
-                if (item.Count == 0) continue;
-                CraftingBox box = this.ActiveEntity.CraftingBoxes.Where(c => c.BoxItem.StringId == item.Item.StringId).FirstOrDefault();
-                if (box == null) continue;
-                GameNetwork.BeginModuleEventAsClient();
-                GameNetwork.WriteMessage(new StockpileUnpackBox(i, this.ActiveEntity));
-                GameNetwork.EndModuleEventAsClient();
-                break;
+                SendNetworkMessage(new StockpileUnpackBox(boxItem.Index, _activeEntity));
             }
+        }
+
+        private void SendNetworkMessage(GameNetworkMessage message)
+        {
+            GameNetwork.BeginModuleEventAsClient();
+            GameNetwork.WriteMessage(message);
+            GameNetwork.EndModuleEventAsClient();
         }
     }
 }

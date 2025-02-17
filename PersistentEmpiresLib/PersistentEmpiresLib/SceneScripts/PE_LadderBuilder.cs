@@ -12,7 +12,6 @@ namespace PersistentEmpiresLib.SceneScripts
 {
     public class PE_LadderBuilder : PE_DestructableComponent
     {
-        public string DestructionState = "";
         public string LadderEntityTag = "ladder_entity";
         public string RepairItem = "pe_buildhammer";
         public int RequiredEngineeringSkillForRepair = 10;
@@ -21,99 +20,83 @@ namespace PersistentEmpiresLib.SceneScripts
         public string ParticleEffectOnRepair = "";
         public string SoundEffectOnRepair = "";
         public bool DestroyedByStoneOnly = false;
-        public bool AlwaysEffectOnDestroy = false;
 
         public string RepairItemRecipies = "pe_hardwood*2,pe_wooden_stick*1";
         public int RepairDamage = 20;
 
-        // private SiegeLadder siegeLadder;
         private List<RepairReceipt> receipt = new List<RepairReceipt>();
         private bool ladderBuilt = false;
         private bool initialized = false;
         private SiegeLadder siegeLadder;
+
         protected override void OnInit()
         {
             this.HitPoint = 0;
-            this.ParseRepairReceipts();
-        }
-
-        public override ScriptComponentBehavior.TickRequirement GetTickRequirement() => initialized ? ScriptComponentBehavior.TickRequirement.None : ScriptComponentBehavior.TickRequirement.Tick;
-
-        protected override void OnTick(float dt)
-        {
-            try
-            {
-                if (initialized == false)
-                {
-                    this.siegeLadder = base.GameEntity.Parent.GetFirstScriptInFamilyDescending<SiegeLadder>();
-                    if (this.siegeLadder == null) return;
-                    this.siegeLadder.GameEntity.SetVisibilityExcludeParents(ladderBuilt);
-                    initialized = true;
-                }
-            }
-            catch (Exception e)
-            {
-
-            }
+            ParseRepairReceipts();
         }
 
         private void ParseRepairReceipts()
         {
-            string[] repairReceipt = this.RepairItemRecipies.Split(',');
-            foreach (string receipt in repairReceipt)
+            receipt.Clear();
+            foreach (string entry in RepairItemRecipies.Split(','))
             {
-                string[] inflictedReceipt = receipt.Split('*');
-                string receiptId = inflictedReceipt[0];
-                int count = int.Parse(inflictedReceipt[1]);
-                this.receipt.Add(new RepairReceipt(receiptId, count));
+                string[] parts = entry.Split('*');
+                if (parts.Length == 2 && int.TryParse(parts[1], out int count))
+                {
+                    receipt.Add(new RepairReceipt(parts[0], count));
+                }
+                else
+                {
+                    Debug.Print($"[Error] Ungültige Reparatur-Definition: {entry}");
+                }
             }
         }
 
-        public bool GetLadderBuilt() => this.ladderBuilt;
+        public override ScriptComponentBehavior.TickRequirement GetTickRequirement()
+        {
+            return initialized ? ScriptComponentBehavior.TickRequirement.None : ScriptComponentBehavior.TickRequirement.Tick;
+        }
+
+        protected override void OnTick(float dt)
+        {
+            if (!initialized)
+            {
+                siegeLadder = base.GameEntity.Parent.GetFirstScriptInFamilyDescending<SiegeLadder>();
+                if (siegeLadder == null) return;
+
+                siegeLadder.GameEntity.SetVisibilityExcludeParents(ladderBuilt);
+                initialized = true;
+            }
+        }
 
         public void SetLadderBuilt(bool built)
         {
-            this.ladderBuilt = built;
-            if (this.siegeLadder != null)
-            {
-                this.siegeLadder.GameEntity.SetVisibilityExcludeParents(built);
-            }
+            if (ladderBuilt == built) return; // Vermeidet unnötige Änderungen
+
+            ladderBuilt = built;
+            siegeLadder?.GameEntity.SetVisibilityExcludeParents(built);
         }
 
         public override void SetHitPoint(float hitPoint, Vec3 impactDirection, ScriptComponentBehavior attackerScriptComponentBehavior)
         {
+            if (hitPoint < 0) hitPoint = 0;
+            if (hitPoint > MaxHitPoint) hitPoint = MaxHitPoint;
 
-            if (hitPoint <= 0) hitPoint = 0;
-            if (hitPoint >= this.MaxHitPoint) hitPoint = this.MaxHitPoint;
+            if (HitPoint == hitPoint) return; // Kein unnötiges Update
 
-            this.HitPoint = hitPoint;
+            HitPoint = hitPoint;
 
-            if (this.ladderBuilt && this.HitPoint <= 0)
+            if (ladderBuilt && HitPoint <= 0)
             {
-                if (this.ParticleEffectOnDestroy != "")
-                {
-                    Mission.Current.Scene.CreateBurstParticle(ParticleSystemManager.GetRuntimeIdByName(this.ParticleEffectOnDestroy), base.GameEntity.GetGlobalFrame());
-                }
-                if (this.SoundEffectOnDestroy != "")
-                {
-                    Mission.Current.MakeSound(SoundEvent.GetEventIdFromString(this.SoundEffectOnDestroy), base.GameEntity.GetGlobalFrame().origin, false, true, -1, -1);
-                }
-                this.siegeLadder.GameEntity.SetVisibilityExcludeParents(false);
-                ladderBuilt = false;
+                PlayDestructionEffects();
+                SetLadderBuilt(false);
             }
-            else if (this.ladderBuilt == false && this.HitPoint >= this.MaxHitPoint)
+            else if (!ladderBuilt && HitPoint >= MaxHitPoint)
             {
-                if (this.ParticleEffectOnRepair != "")
-                {
-                    Mission.Current.Scene.CreateBurstParticle(ParticleSystemManager.GetRuntimeIdByName(this.ParticleEffectOnRepair), base.GameEntity.GetGlobalFrame());
-                }
-                if (this.SoundEffectOnRepair != "")
-                {
-                    Mission.Current.MakeSound(SoundEvent.GetEventIdFromString(this.SoundEffectOnRepair), base.GameEntity.GetGlobalFrame().origin, false, true, -1, -1);
-                }
-                this.siegeLadder.GameEntity.SetVisibilityExcludeParents(true);
-                ladderBuilt = true;
+                PlayRepairEffects();
+                SetLadderBuilt(true);
             }
+
             if (GameNetwork.IsServer)
             {
                 GameNetwork.BeginBroadcastModuleEvent();
@@ -122,65 +105,104 @@ namespace PersistentEmpiresLib.SceneScripts
             }
         }
 
+        private void PlayRepairEffects()
+        {
+            if (!string.IsNullOrEmpty(ParticleEffectOnRepair))
+            {
+                Mission.Current.Scene.CreateBurstParticle(ParticleSystemManager.GetRuntimeIdByName(ParticleEffectOnRepair), base.GameEntity.GetGlobalFrame());
+            }
+            if (!string.IsNullOrEmpty(SoundEffectOnRepair))
+            {
+                Mission.Current.MakeSound(SoundEvent.GetEventIdFromString(SoundEffectOnRepair), base.GameEntity.GetGlobalFrame().origin, false, true, -1, -1);
+            }
+        }
+
+        private void PlayDestructionEffects()
+        {
+            if (!string.IsNullOrEmpty(ParticleEffectOnDestroy))
+            {
+                Mission.Current.Scene.CreateBurstParticle(ParticleSystemManager.GetRuntimeIdByName(ParticleEffectOnDestroy), base.GameEntity.GetGlobalFrame());
+            }
+            if (!string.IsNullOrEmpty(SoundEffectOnDestroy))
+            {
+                Mission.Current.MakeSound(SoundEvent.GetEventIdFromString(SoundEffectOnDestroy), base.GameEntity.GetGlobalFrame().origin, false, true, -1, -1);
+            }
+        }
+
         protected override bool OnHit(Agent attackerAgent, int damage, Vec3 impactPosition, Vec3 impactDirection, in MissionWeapon weapon, ScriptComponentBehavior attackerScriptComponentBehavior, out bool reportDamage)
         {
             reportDamage = true;
-            MissionWeapon missionWeapon = weapon;
-            WeaponComponentData currentUsageItem = missionWeapon.CurrentUsageItem;
-            if (
-                attackerAgent != null &&
-                attackerAgent.Character.GetSkillValue(DefaultSkills.Engineering) >= this.RequiredEngineeringSkillForRepair &&
-                missionWeapon.Item != null &&
-                missionWeapon.Item.StringId == this.RepairItem &&
-                attackerAgent.IsHuman &&
-                attackerAgent.IsPlayerControlled &&
-                this.HitPoint != this.MaxHitPoint
-                )
+
+            if (attackerAgent == null || weapon.Item == null || !attackerAgent.IsHuman || !attackerAgent.IsPlayerControlled)
+                return false;
+
+            NetworkCommunicator player = attackerAgent.MissionPeer.GetNetworkPeer();
+            bool isAdmin = Main.IsPlayerAdmin(player);
+
+            // Admin-Hammer für sofortiges Bauen
+            if (isAdmin && weapon.Item.StringId == "pe_adminhammer")
             {
-                reportDamage = false;
-                NetworkCommunicator player = attackerAgent.MissionPeer.GetNetworkPeer();
-                PersistentEmpireRepresentative persistentEmpireRepresentative = player.GetComponent<PersistentEmpireRepresentative>();
-                if (persistentEmpireRepresentative == null) return false;
-                bool playerHasAllItems = this.receipt.All((r) => persistentEmpireRepresentative.GetInventory().IsInventoryIncludes(r.RepairItem, r.NeededCount));
-                if (!playerHasAllItems)
+                SetHitPoint(MaxHitPoint, impactDirection, attackerScriptComponentBehavior);
+                return true;
+            }
+
+            if (weapon.Item.StringId == RepairItem &&
+                attackerAgent.Character.GetSkillValue(DefaultSkills.Engineering) >= RequiredEngineeringSkillForRepair &&
+                !ladderBuilt)
+            {
+                if (!HasRequiredMaterials(player))
                 {
-                    //TODO: Inform player
-                    InformationComponent.Instance.SendMessage("Required Items:", 0x02ab89d9, player);
-                    foreach (RepairReceipt r in this.receipt)
-                    {
-                        InformationComponent.Instance.SendMessage(r.NeededCount + " * " + r.RepairItem.Name.ToString(), 0x02ab89d9, player);
-                    }
+                    InformPlayerMissingResources(player);
                     return false;
                 }
-                foreach (RepairReceipt r in this.receipt)
-                {
-                    persistentEmpireRepresentative.GetInventory().RemoveCountedItem(r.RepairItem, r.NeededCount);
-                }
-                InformationComponent.Instance.SendMessage((this.HitPoint + this.RepairDamage).ToString() + "/" + this.MaxHitPoint + ", repaired", 0x02ab89d9, player);
-                this.SetHitPoint(this.HitPoint + this.RepairDamage, impactDirection, attackerScriptComponentBehavior);
-                if (GameNetwork.IsServer)
-                {
-                    // LoggerHelper.LogAnAction(attackerAgent.MissionPeer.GetNetworkPeer(), LogAction.PlayerRepairesTheDestructable, null, new object[] { this.GetType().Name });
-                }
+
+                ConsumeRepairMaterials(player);
+                SetHitPoint(HitPoint + RepairDamage, impactDirection, attackerScriptComponentBehavior);
+                InformationComponent.Instance.SendMessage($"🔧 {HitPoint}/{MaxHitPoint} repariert!", 0x02ab89d9, player);
+                return true;
             }
-            else if (ladderBuilt == false || (ladderBuilt == true && this.siegeLadder.State == SiegeLadder.LadderState.OnLand))
+            else if (!ladderBuilt || (ladderBuilt && siegeLadder.State == SiegeLadder.LadderState.OnLand))
             {
-                if (this.DestroyedByStoneOnly)
+                if (DestroyedByStoneOnly)
                 {
-                    if (currentUsageItem == null || (currentUsageItem.WeaponClass != WeaponClass.Stone && currentUsageItem.WeaponClass != WeaponClass.Boulder) || !currentUsageItem.WeaponFlags.HasAnyFlag(WeaponFlags.NotUsableWithOneHand))
+                    if (weapon.CurrentUsageItem == null ||
+                        (weapon.CurrentUsageItem.WeaponClass != WeaponClass.Stone && weapon.CurrentUsageItem.WeaponClass != WeaponClass.Boulder))
                     {
                         damage = 0;
                     }
                 }
-                if (impactDirection == null) impactDirection = Vec3.Zero;
 
-                this.SetHitPoint(this.HitPoint - damage, impactDirection, attackerScriptComponentBehavior);
-                if (GameNetwork.IsServer)
-                {
-                    // LoggerHelper.LogAnAction(attackerAgent.MissionPeer.GetNetworkPeer(), LogAction.PlayerHitToDestructable, null, new object[] { this.GetType().Name });
-                }
+                SetHitPoint(HitPoint - damage, impactDirection, attackerScriptComponentBehavior);
+                return true;
             }
+
             return false;
+        }
+
+        private bool HasRequiredMaterials(NetworkCommunicator player)
+        {
+            PersistentEmpireRepresentative rep = player.GetComponent<PersistentEmpireRepresentative>();
+            return rep != null && receipt.All(r => rep.GetInventory().IsInventoryIncludes(r.RepairItem, r.NeededCount));
+        }
+
+        private void ConsumeRepairMaterials(NetworkCommunicator player)
+        {
+            PersistentEmpireRepresentative rep = player.GetComponent<PersistentEmpireRepresentative>();
+            if (rep == null) return;
+
+            foreach (RepairReceipt r in receipt)
+            {
+                rep.GetInventory().RemoveCountedItem(r.RepairItem, r.NeededCount);
+            }
+        }
+
+        private void InformPlayerMissingResources(NetworkCommunicator player)
+        {
+            InformationComponent.Instance.SendMessage("⚠️ Fehlende Ressourcen für die Reparatur:", 0x02ab89d9, player);
+            foreach (RepairReceipt r in receipt)
+            {
+                InformationComponent.Instance.SendMessage($"❌ {r.NeededCount}x {r.RepairItem.Name}", 0x02ab89d9, player);
+            }
         }
     }
 }

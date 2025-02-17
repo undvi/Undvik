@@ -1,25 +1,34 @@
 ﻿using PersistentEmpiresLib.SceneScripts;
-using System.Collections.Generic;
 using TaleWorlds.MountAndBlade;
 using TaleWorlds.MountAndBlade.Network.Messages;
+using System.Collections.Generic;
 
 namespace PersistentEmpiresLib.NetworkMessages.Server
 {
     [DefineGameNetworkMessageTypeForMod(GameNetworkMessageSendType.FromServer)]
-    public sealed class UpdateStockpileMultiStock : GameNetworkMessage
+    public sealed class UpdateStockpileStock : GameNetworkMessage
     {
-        public MissionObject Stockpile;
-        public List<int> Indexes;
-        public List<int> Stocks;
+        public MissionObject StockpileMarket { get; private set; }
+        public List<int> ItemIndexes { get; private set; }
+        public List<int> NewStocks { get; private set; }
+        public List<float> MarketTaxRates { get; private set; } // Fraktionssteuer pro Item
+        public List<int> ItemPrices { get; private set; } // Spielerdefinierte Preise pro Item
 
-        public UpdateStockpileMultiStock() { }
+        public UpdateStockpileStock() { }
 
-        public UpdateStockpileMultiStock(PE_StockpileMarket stockpile, List<int> Indexes, List<int> Stocks)
+        public UpdateStockpileStock(MissionObject stockpileMarket, List<int> itemIndexes, List<int> newStocks, List<float> marketTaxRates, List<int> itemPrices)
         {
-            this.Stockpile = stockpile;
-            this.Indexes = Indexes;
-            this.Stocks = Stocks;
+            if (stockpileMarket == null) throw new System.ArgumentNullException(nameof(stockpileMarket), "⚠️ Fehler: StockpileMarket ist null!");
+            if (itemIndexes == null || newStocks == null || marketTaxRates == null || itemPrices == null)
+                throw new System.ArgumentNullException("⚠️ Fehler: Item-Listen dürfen nicht null sein!");
+
+            this.StockpileMarket = stockpileMarket;
+            this.ItemIndexes = itemIndexes;
+            this.NewStocks = newStocks;
+            this.MarketTaxRates = marketTaxRates;
+            this.ItemPrices = itemPrices;
         }
+
         protected override MultiplayerMessageFilter OnGetLogFilter()
         {
             return MultiplayerMessageFilter.MissionObjects;
@@ -27,43 +36,52 @@ namespace PersistentEmpiresLib.NetworkMessages.Server
 
         protected override string OnGetLogFormat()
         {
-            return "Received UpdateStockpileMultiStock";
+            return this.StockpileMarket != null
+                ? $"🔄 Lager-Update für {StockpileMarket.Name}: {ItemIndexes.Count} Items aktualisiert"
+                : "⚠️ Fehler: StockpileMarket ist NULL!";
         }
 
         protected override bool OnRead()
         {
             bool result = true;
-            this.Stockpile = Mission.MissionNetworkHelper.GetMissionObjectFromMissionObjectId(GameNetworkMessage.ReadMissionObjectIdFromPacket(ref result));
-            this.Indexes = new List<int>();
-            this.Stocks = new List<int>();
+            this.StockpileMarket = Mission.MissionNetworkHelper.GetMissionObjectFromMissionObjectId(
+                GameNetworkMessage.ReadMissionObjectIdFromPacket(ref result)
+            );
 
-            int indexLen = GameNetworkMessage.ReadIntFromPacket(new CompressionInfo.Integer(0, 4096, true), ref result);
-            for (int i = 0; i < indexLen; i++)
+            int itemCount = GameNetworkMessage.ReadIntFromPacket(new CompressionInfo.Integer(0, 4096, true), ref result);
+            this.ItemIndexes = new List<int>(itemCount);
+            this.NewStocks = new List<int>(itemCount);
+            this.MarketTaxRates = new List<float>(itemCount);
+            this.ItemPrices = new List<int>(itemCount);
+
+            for (int i = 0; i < itemCount; i++)
             {
-                this.Indexes.Add(GameNetworkMessage.ReadIntFromPacket(new CompressionInfo.Integer(0, 4096, true), ref result));
+                this.ItemIndexes.Add(GameNetworkMessage.ReadIntFromPacket(new CompressionInfo.Integer(0, 4096, true), ref result));
+                this.NewStocks.Add(GameNetworkMessage.ReadIntFromPacket(new CompressionInfo.Integer(0, PE_StockpileMarket.MAX_STOCK_COUNT, true), ref result));
+                this.MarketTaxRates.Add(GameNetworkMessage.ReadFloatFromPacket(new CompressionInfo.Float(0f, 1f, 0.01f), ref result));
+                this.ItemPrices.Add(GameNetworkMessage.ReadIntFromPacket(new CompressionInfo.Integer(1, 100000, true), ref result)); // Spielerdefinierte Preise
             }
 
-            int stocksLen = GameNetworkMessage.ReadIntFromPacket(new CompressionInfo.Integer(0, 4096, true), ref result);
-            for (int i = 0; i < stocksLen; i++)
-            {
-                this.Stocks.Add(GameNetworkMessage.ReadIntFromPacket(new CompressionInfo.Integer(0, 4096, true), ref result));
-            }
             return result;
         }
 
         protected override void OnWrite()
         {
-            GameNetworkMessage.WriteMissionObjectIdToPacket(this.Stockpile.Id);
-            GameNetworkMessage.WriteIntToPacket(this.Indexes.Count, new CompressionInfo.Integer(0, 4096, true));
-            for (int i = 0; i < this.Indexes.Count; i++)
+            if (this.StockpileMarket == null)
             {
-                GameNetworkMessage.WriteIntToPacket(this.Indexes[i], new CompressionInfo.Integer(0, 4096, true));
+                InformationManager.DisplayMessage(new InformationMessage("⚠️ Fehler: Kein gültiges Lager für Netzwerksynchronisation!"));
+                return;
             }
 
-            GameNetworkMessage.WriteIntToPacket(this.Stocks.Count, new CompressionInfo.Integer(0, 4096, true));
-            for (int i = 0; i < this.Stocks.Count; i++)
+            GameNetworkMessage.WriteMissionObjectIdToPacket(this.StockpileMarket.Id);
+            GameNetworkMessage.WriteIntToPacket(this.ItemIndexes.Count, new CompressionInfo.Integer(0, 4096, true));
+
+            for (int i = 0; i < this.ItemIndexes.Count; i++)
             {
-                GameNetworkMessage.WriteIntToPacket(this.Stocks[i], new CompressionInfo.Integer(0, 4096, true));
+                GameNetworkMessage.WriteIntToPacket(this.ItemIndexes[i], new CompressionInfo.Integer(0, 4096, true));
+                GameNetworkMessage.WriteIntToPacket(this.NewStocks[i], new CompressionInfo.Integer(0, PE_StockpileMarket.MAX_STOCK_COUNT, true));
+                GameNetworkMessage.WriteFloatToPacket(this.MarketTaxRates[i], new CompressionInfo.Float(0f, 1f, 0.01f));
+                GameNetworkMessage.WriteIntToPacket(this.ItemPrices[i], new CompressionInfo.Integer(1, 100000, true)); // Spielerdefinierte Preise
             }
         }
     }

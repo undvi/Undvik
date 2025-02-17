@@ -6,41 +6,41 @@
 		<Widget HorizontalAlignment="Center" HeightSizePolicy="StretchToParent" WidthSizePolicy="StretchToParent" MarginTop="20" MarginBottom="80">
 			<Children>
 
-				<!-- Linke Seite: Rüstung -->
+				<!-- 🎭 Linke Seite: Rüstung -->
 				<Widget Id="LeftArmors" DataSource="{PlayerInventory}" WidthSizePolicy="CoverChildren" HorizontalAlignment="Left" HeightSizePolicy="CoverChildren" PositionYOffset="130">
 					<Children>
-						<ListPanel VerticalAlignment="Center" StackLayout.LayoutMethod="VerticalBottomToTop" WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren">
+						<ListPanel VerticalAlignment="Center" StackLayout.LayoutMethod="VerticalBottomToTop">
 							<Children>
-								<PEEquipmentSlot Parameter.ItemDataSource="{HelmSlot}" Parameter.EquipmentBrush="PE.InventorySlot.HeadArmor" HorizontalAlignment="Left" MarginLeft="1" />
-								<PEEquipmentSlot Parameter.ItemDataSource="{CapSlot}" Parameter.EquipmentBrush="PE.InventorySlot.CapeArmor" HorizontalAlignment="Left" MarginTop="-20" MarginLeft="1" />
-								<PEEquipmentSlot Parameter.ItemDataSource="{BodySlot}" Parameter.EquipmentBrush="PE.InventorySlot.BodyArmor" HorizontalAlignment="Left" MarginTop="-20" MarginLeft="1" />
-								<PEEquipmentSlot Parameter.ItemDataSource="{HandSlot}" Parameter.EquipmentBrush="PE.InventorySlot.HandArmor" HorizontalAlignment="Left" MarginTop="-20" MarginLeft="1" />
-								<PEEquipmentSlot Parameter.ItemDataSource="{LegSlot}" Parameter.EquipmentBrush="PE.InventorySlot.LegArmor" HorizontalAlignment="Left" MarginTop="-20" MarginLeft="1" />
+								<PEEquipmentSlot Parameter.ItemDataSource="{HelmSlot}" Parameter.EquipmentBrush="PE.InventorySlot.HeadArmor"/>
+								<PEEquipmentSlot Parameter.ItemDataSource="{CapSlot}" Parameter.EquipmentBrush="PE.InventorySlot.CapeArmor"/>
+								<PEEquipmentSlot Parameter.ItemDataSource="{BodySlot}" Parameter.EquipmentBrush="PE.InventorySlot.BodyArmor"/>
+								<PEEquipmentSlot Parameter.ItemDataSource="{HandSlot}" Parameter.EquipmentBrush="PE.InventorySlot.HandArmor"/>
+								<PEEquipmentSlot Parameter.ItemDataSource="{LegSlot}" Parameter.EquipmentBrush="PE.InventorySlot.LegArmor"/>
 							</Children>
 						</ListPanel>
 					</Children>
 				</Widget>
 
-				<!-- Rechte Seite: Ausrüstung -->
+				<!-- ⚔️ Rechte Seite: Ausrüstung -->
 				<Widget Id="RightEquipments" DataSource="{PlayerInventory}" WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren" HorizontalAlignment="Right">
 					<Children>
-						<ListPanel StackLayout.LayoutMethod="VerticalBottomToTop" WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren" MarginTop="100">
+						<ListPanel StackLayout.LayoutMethod="VerticalBottomToTop">
 							<Children>
-								<PEEquipmentSlot Parameter.ItemDataSource="{Item0}" Parameter.EquipmentBrush="PE.InventorySlot.Equipment" HorizontalAlignment="Left" MarginLeft="5" />
-								<PEEquipmentSlot Parameter.ItemDataSource="{Item1}" Parameter.EquipmentBrush="PE.InventorySlot.Equipment" HorizontalAlignment="Left" MarginTop="-20" MarginLeft="5" />
-								<PEEquipmentSlot Parameter.ItemDataSource="{Item2}" Parameter.EquipmentBrush="PE.InventorySlot.Equipment" HorizontalAlignment="Left" MarginTop="-20" MarginLeft="5" />
-								<PEEquipmentSlot Parameter.ItemDataSource="{Item3}" Parameter.EquipmentBrush="PE.InventorySlot.Equipment" HorizontalAlignment="Left" MarginTop="-20" MarginLeft="5" />
+								<PEEquipmentSlot Parameter.ItemDataSource="{Item0}" Parameter.EquipmentBrush="PE.InventorySlot.Equipment"/>
+								<PEEquipmentSlot Parameter.ItemDataSource="{Item1}" Parameter.EquipmentBrush="PE.InventorySlot.Equipment"/>
+								<PEEquipmentSlot Parameter.ItemDataSource="{Item2}" Parameter.EquipmentBrush="PE.InventorySlot.Equipment"/>
+								<PEEquipmentSlot Parameter.ItemDataSource="{Item3}" Parameter.EquipmentBrush="PE.InventorySlot.Equipment"/>
 							</Children>
 						</ListPanel>
 					</Children>
 				</Widget>
 
-				<!-- Inventar -->
-				<Widget HorizontalAlignment="Center" DataSource="{PlayerInventory}" SuggestedHeight="300" SuggestedWidth="800" PositionYOffset="-120" MarginBottom="50">
+				<!-- 🎒 Inventar -->
+				<Widget HorizontalAlignment="Center" DataSource="{PlayerInventory}" SuggestedHeight="300" SuggestedWidth="800" PositionYOffset="-120">
 					<Children>
 						<Standard.Window Parameter.Title="">
 							<Children>
-								<GridWidget Id="InventoryGrid" DataSource="{InventoryItems}" DefaultCellHeight="140" DefaultCellWidth="140" HorizontalAlignment="Center" VerticalAlignment="Center" ColumnCount="5" MarginTop="30" WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren">
+								<GridWidget Id="InventoryGrid" DataSource="{InventoryItems}" DefaultCellHeight="140" DefaultCellWidth="140" ColumnCount="5">
 									<ItemTemplate>
 										<PEInventorySlot DataSource="{..\..}" />
 									</ItemTemplate>
@@ -50,65 +50,75 @@
 					</Children>
 				</Widget>
 
-				<!-- Stockpile Market -->
-				<Widget HorizontalAlignment="Center" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="1150" SuggestedHeight="750" VerticalAlignment="Center" MarginBottom="50" PositionYOffset="150" IsVisible="true">
+				<!-- 🏪 Stockpile Market -->
+				<Widget HorizontalAlignment="Center" SuggestedWidth="1150" SuggestedHeight="750" VerticalAlignment="Center">
 					<Children>
-						<Standard.Window Parameter.Title="Stockpile Market" WidthSizePolicy="CoverChildren">
+						<Standard.Window Parameter.Title="Stockpile Market">
 							<Children>
 
-								<!-- Suchfunktion -->
-								<ListPanel MarginBottom="5" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren">
+								<!-- 🔍 Suchfunktion -->
+								<ListPanel MarginBottom="5">
 									<Children>
-										<TextWidget WidthSizePolicy="StretchToParent" Text="Search For Item" MarginTop="45"></TextWidget>
-										<Widget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="55" MarginLeft="15" MarginRight="15" MarginTop="15" Sprite="General\CharacterCreation\name_input_area">
+										<TextWidget Text="Search For Item" MarginTop="45"/>
+										<Widget SuggestedHeight="55" Sprite="General\CharacterCreation\name_input_area">
 											<Children>
-												<EditableTextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent" Brush="ClanNaming.NameInput.Text" Text="@NameFilter" GamepadNavigationIndex="0" />
+												<EditableTextWidget Brush="ClanNaming.NameInput.Text" Text="@NameFilter"/>
 											</Children>
 										</Widget>
 									</Children>
 								</ListPanel>
 
-								<!-- Filter Optionen -->
-								<ListPanel WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren" HorizontalAlignment="Center">
+								<!-- 📊 Filter Optionen -->
+								<ListPanel HorizontalAlignment="Center">
 									<Children>
-										<Standard.DropdownWithHorizontalControl Id="SelectionOption" Parameter.SelectorDataSource="{StockFilter}" Text="Filter By Stock" />
-										<Standard.DropdownWithHorizontalControl Id="SelectionOption" Parameter.SelectorDataSource="{ItemTypeFilter}" Text="Filter By Type" />
-										<Standard.DropdownWithHorizontalControl Id="SelectionOption" Parameter.SelectorDataSource="{CultureFilter}" Text="Filter By Culture" />
+										<Standard.DropdownWithHorizontalControl Id="StockFilterOption" Parameter.SelectorDataSource="{StockFilter}" Text="Filter By Stock"/>
+										<Standard.DropdownWithHorizontalControl Id="ItemTypeFilterOption" Parameter.SelectorDataSource="{ItemTypeFilter}" Text="Filter By Type"/>
+										<Standard.DropdownWithHorizontalControl Id="CultureFilterOption" Parameter.SelectorDataSource="{CultureFilter}" Text="Filter By Culture"/>
 									</Children>
 								</ListPanel>
 
-								<!-- Item Liste -->
-								<ScrollablePanel Id="ScrollablePanel" WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent">
+								<!-- 📜 Item Liste -->
+								<ScrollablePanel Id="ItemListScroll">
 									<Children>
-										<ListPanel Id="ItemList" DataSource="{FilteredItemList}" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" StackLayout.LayoutMethod="VerticalBottomToTop">
+										<ListPanel Id="ItemList" DataSource="{FilteredItemList}">
 											<ItemTemplate>
-												<PEStockpileMarketItem Parameter.ItemDataSource="{..\..}"></PEStockpileMarketItem>
+												<PEStockpileMarketItem Parameter.ItemDataSource="{..\..}"/>
 											</ItemTemplate>
 										</ListPanel>
 									</Children>
 								</ScrollablePanel>
 
-								<!-- Aktionen -->
-								<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren">
+								<!-- 🎮 Aktionen -->
+								<ListPanel>
 									<Children>
-										<TextWidget Text="S = Sell Price, B = Buy Price" WidthSizePolicy="CoverChildren" HorizontalAlignment="Center" Brush="PE.Text.Info"></TextWidget>
-										<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" StackLayout.LayoutMethod="HorizontalLeftToRight">
+										<TextWidget Text="S = Sell Price, B = Buy Price" HorizontalAlignment="Center" Brush="PE.Text.Info"/>
+										<ListPanel StackLayout.LayoutMethod="HorizontalLeftToRight">
 											<Children>
-												<ButtonWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="80" Brush="WideButton.Flat" Command.Click="ExecuteBuy" IsEnabled="@CanExport">
+
+												<!-- 🛒 Kaufen -->
+												<ButtonWidget Command.Click="ExecuteBuy" IsEnabled="@CanExport">
 													<Children>
-														<TextWidget Text="Buy" Brush="MPLobby.PlayButton.Text" Brush.FontSize="25" />
+														<TextWidget Text="Buy" Brush="MPLobby.PlayButton.Text"/>
 													</Children>
+													<TooltipWidget Text="Kaufe das ausgewählte Item"/>
 												</ButtonWidget>
-												<ButtonWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="80" Brush="WideButton.Flat" Command.Click="ExecuteUnpackBoxes">
+
+												<!-- 📦 Ressourcen-Box entpacken -->
+												<ButtonWidget Command.Click="ExecuteUnpackBoxes">
 													<Children>
-														<TextWidget Text="Unpack Resource Box" Brush="MPLobby.PlayButton.Text" Brush.FontSize="25" />
+														<TextWidget Text="Unpack Resource Box" Brush="MPLobby.PlayButton.Text"/>
 													</Children>
+													<TooltipWidget Text="Entpackt eine Ressourcenbox aus deinem Inventar"/>
 												</ButtonWidget>
-												<ButtonWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="80" Brush="WideButton.Flat" Command.Click="ExecuteSell" IsEnabled="@CanImport">
+
+												<!-- 💰 Verkaufen -->
+												<ButtonWidget Command.Click="ExecuteSell" IsEnabled="@CanImport">
 													<Children>
-														<TextWidget Text="Sell" Brush="MPLobby.PlayButton.Text" Brush.FontSize="25" />
+														<TextWidget Text="Sell" Brush="MPLobby.PlayButton.Text"/>
 													</Children>
+													<TooltipWidget Text="Verkaufe das ausgewählte Item"/>
 												</ButtonWidget>
+
 											</Children>
 										</ListPanel>
 									</Children>

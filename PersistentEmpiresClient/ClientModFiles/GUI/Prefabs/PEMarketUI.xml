@@ -1,0 +1,45 @@
+<Prefab>
+	<Window>
+		<Widget HorizontalAlignment="Center" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="900" SuggestedHeight="600" VerticalAlignment="Center">
+			<Children>
+				<Standard.Window Parameter.Title="🛒 Marktplatz">
+					<Children>
+						<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="StretchToParent">
+							<Children>
+
+								<!-- Spieler Gold & Einfluss -->
+								<TextWidget WidthSizePolicy="StretchToParent" Text="💰 Gold: {@PlayerGold} | 🏛️ Einfluss: {@PlayerInfluence}" Brush.FontSize="22" MarginTop="10" />
+
+								<!-- Marktstand-Optionen -->
+								<ListPanel Id="MarketStandsList" DataSource="{AvailableMarketStands}" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren">
+									<ItemTemplate>
+										<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren">
+											<Children>
+												<TextWidget WidthSizePolicy="CoverChildren" Text="🛖 {StandName} - Miete: {RentPrice} Gold" Brush.FontSize="18" />
+												<ButtonWidget Text="Mieten" OnClick="RentMarket({StandID})" Condition="{!IsOccupied}" />
+												<ButtonWidget Text="Kaufen" OnClick="PurchaseMarket({StandID})" Condition="{!IsOwned}" />
+											</Children>
+										</ListPanel>
+									</ItemTemplate>
+								</ListPanel>
+
+								<!-- Verkaufsangebote -->
+								<ListPanel Id="MarketOffersList" DataSource="{MarketOffers}" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren">
+									<ItemTemplate>
+										<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren">
+											<Children>
+												<TextWidget WidthSizePolicy="CoverChildren" Text="🛒 {ItemName} - Preis: {ItemPrice} Gold (+Steuer {TaxRate}%)" Brush.FontSize="18" />
+												<ButtonWidget Text="Kaufen" OnClick="BuyItem({ItemID})" />
+											</Children>
+										</ListPanel>
+									</ItemTemplate>
+								</ListPanel>
+
+							</Children>
+						</ListPanel>
+					</Children>
+				</Standard.Window>
+			</Children>
+		</Widget>
+	</Window>
+</Prefab>

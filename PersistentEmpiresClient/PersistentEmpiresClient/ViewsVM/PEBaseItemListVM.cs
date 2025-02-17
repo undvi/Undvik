@@ -9,8 +9,8 @@ namespace PersistentEmpiresClient.ViewsVM
 {
     public class PEBaseItemListVM<T, U> : ViewModel
     {
-        private List<U> items;
-        private Action<PEItemVM> _handleClickItem;
+        private List<U> _items;
+        private readonly Action<PEItemVM> _handleClickItem;
         private PEInventoryVM _playerInventory;
         private string _nameFilter;
         private MBBindingList<T> _filteredItemList;
@@ -18,16 +18,23 @@ namespace PersistentEmpiresClient.ViewsVM
         private SelectorVM<SelectorItemVM> _cultureFilter;
         private SelectorVM<SelectorItemVM> _tierFilter;
         private SelectorVM<SelectorItemVM> _itemTypeFilter;
-        private int lastRenderedIndex;
+        private int _lastRenderedIndex;
 
-        private Dictionary<string, bool?> stockFilterDict = new Dictionary<string, bool?>()
+        private bool? _stockFilterValue;
+        private string _cultureFilterValue;
+        private int? _tierFilterValue;
+        private TaleWorlds.Core.ItemObject.ItemTypeEnum? _itemTypeFilterValue;
+
+        private const int MaxItemsRenderedPerTick = 25;
+
+        private static readonly Dictionary<string, bool?> StockFilterDict = new()
         {
             {"All", null},
             {"Available Stock", true},
             {"No Stock", false}
         };
 
-        private Dictionary<string, string> cultureFilterDict = new Dictionary<string, string>()
+        private static readonly Dictionary<string, string> CultureFilterDict = new()
         {
             {"All", null},
             {"Vlandia", "vlandia"},
@@ -39,7 +46,7 @@ namespace PersistentEmpiresClient.ViewsVM
             {"Neutral Culture", "neutral_culture"}
         };
 
-        private Dictionary<string, int?> tierFilterDict = new Dictionary<string, int?>()
+        private static readonly Dictionary<string, int?> TierFilterDict = new()
         {
             {"All", null},
             {"Tier 1", 1},
@@ -47,216 +54,145 @@ namespace PersistentEmpiresClient.ViewsVM
             {"Tier 3", 3}
         };
 
-        private Dictionary<string, TaleWorlds.Core.ItemObject.ItemTypeEnum?> itemTypeDict = new Dictionary<string, TaleWorlds.Core.ItemObject.ItemTypeEnum?>()
+        private static readonly Dictionary<string, TaleWorlds.Core.ItemObject.ItemTypeEnum?> ItemTypeDict = new()
         {
             {"All", null},
-            {"Invalid", TaleWorlds.Core.ItemObject.ItemTypeEnum.Invalid},
-            {"Horse", TaleWorlds.Core.ItemObject.ItemTypeEnum.Horse},
             {"One Handed Weapon", TaleWorlds.Core.ItemObject.ItemTypeEnum.OneHandedWeapon},
             {"Two Handed Weapon", TaleWorlds.Core.ItemObject.ItemTypeEnum.TwoHandedWeapon},
             {"Polearm", TaleWorlds.Core.ItemObject.ItemTypeEnum.Polearm},
-            {"Arrows", TaleWorlds.Core.ItemObject.ItemTypeEnum.Arrows},
-            {"Bolts", TaleWorlds.Core.ItemObject.ItemTypeEnum.Bolts},
-            {"Shield", TaleWorlds.Core.ItemObject.ItemTypeEnum.Shield},
             {"Bow", TaleWorlds.Core.ItemObject.ItemTypeEnum.Bow},
             {"Crossbow", TaleWorlds.Core.ItemObject.ItemTypeEnum.Crossbow},
             {"Thrown", TaleWorlds.Core.ItemObject.ItemTypeEnum.Thrown},
             {"Goods", TaleWorlds.Core.ItemObject.ItemTypeEnum.Goods},
-            {"Head Armor", TaleWorlds.Core.ItemObject.ItemTypeEnum.HeadArmor},
-            {"Body Armor", TaleWorlds.Core.ItemObject.ItemTypeEnum.BodyArmor},
-            {"Chest Armor", TaleWorlds.Core.ItemObject.ItemTypeEnum.ChestArmor},
-            {"Leg Armor", TaleWorlds.Core.ItemObject.ItemTypeEnum.LegArmor},
-            {"Hand Armor", TaleWorlds.Core.ItemObject.ItemTypeEnum.HandArmor},
-            {"Pistol", TaleWorlds.Core.ItemObject.ItemTypeEnum.Pistol},
-            {"Musket", TaleWorlds.Core.ItemObject.ItemTypeEnum.Musket},
-            {"Bullets", TaleWorlds.Core.ItemObject.ItemTypeEnum.Bullets},
-            {"Animal", TaleWorlds.Core.ItemObject.ItemTypeEnum.Animal},
-            {"Book", TaleWorlds.Core.ItemObject.ItemTypeEnum.Book},
-            {"Cape", TaleWorlds.Core.ItemObject.ItemTypeEnum.Cape},
-            {"Horse Harness", TaleWorlds.Core.ItemObject.ItemTypeEnum.HorseHarness},
-            {"Banner", TaleWorlds.Core.ItemObject.ItemTypeEnum.Banner}
+            {"Armor", TaleWorlds.Core.ItemObject.ItemTypeEnum.BodyArmor},
+            {"Horse", TaleWorlds.Core.ItemObject.ItemTypeEnum.Horse}
         };
 
-        private bool? stockFilter = null;
-        private string cultureFilter = null;
-        private int? tierFilter = null;
-        private TaleWorlds.Core.ItemObject.ItemTypeEnum? itemTypeFilter = null;
-
-        protected int maxItemsRenderedPerTick = 25;
-
-        public PEBaseItemListVM(Action<PEItemVM> _handleClickItem)
+        public PEBaseItemListVM(Action<PEItemVM> handleClickItem)
         {
-            this._handleClickItem = _handleClickItem;
-            this.lastRenderedIndex = 0;
-            this.FilteredItemList = new MBBindingList<T>();
-            this.NameFilter = "";
-            this.StockFilter = new SelectorVM<SelectorItemVM>(new List<string>(this.stockFilterDict.Keys), 0, this.OnStockFilterSelected);
-            this.CultureFilter = new SelectorVM<SelectorItemVM>(new List<string>(this.cultureFilterDict.Keys), 0, this.OnCultureFilterSelected);
-            this.TierFilter = new SelectorVM<SelectorItemVM>(new List<string>(this.tierFilterDict.Keys), 0, this.OnTierFilterSelected);
-            this.ItemTypeFilter = new SelectorVM<SelectorItemVM>(new List<string>(this.itemTypeDict.Keys), 0, this.OnItemTypeFilterSelected);
+            _handleClickItem = handleClickItem ?? throw new ArgumentNullException(nameof(handleClickItem));
+            _lastRenderedIndex = 0;
+            _filteredItemList = new MBBindingList<T>();
+            _nameFilter = string.Empty;
+
+            StockFilter = new SelectorVM<SelectorItemVM>(new List<string>(StockFilterDict.Keys), 0, OnStockFilterSelected);
+            CultureFilter = new SelectorVM<SelectorItemVM>(new List<string>(CultureFilterDict.Keys), 0, OnCultureFilterSelected);
+            TierFilter = new SelectorVM<SelectorItemVM>(new List<string>(TierFilterDict.Keys), 0, OnTierFilterSelected);
+            ItemTypeFilter = new SelectorVM<SelectorItemVM>(new List<string>(ItemTypeDict.Keys), 0, OnItemTypeFilterSelected);
         }
 
         public virtual void AddItem(object obj, int index) { }
 
         public void RefreshValues(List<U> items, Inventory playerInventory)
         {
-            this.ItemsList = items;
-
-            this.PlayerInventory = new PEInventoryVM(this._handleClickItem);
-            this.PlayerInventory.SetItems(playerInventory);
+            ItemsList = items ?? new List<U>();
+            PlayerInventory = new PEInventoryVM(_handleClickItem);
+            PlayerInventory.SetItems(playerInventory);
             ReRender();
         }
 
         private void ReRender()
         {
-            this.lastRenderedIndex = 0;
-            this.FilteredItemList.Clear();
+            _lastRenderedIndex = 0;
+            _filteredItemList.Clear();
         }
 
         private void OnStockFilterSelected(SelectorVM<SelectorItemVM> obj)
         {
-            this.stockFilter = this.stockFilterDict[obj.SelectedItem.StringItem];
+            _stockFilterValue = StockFilterDict[obj.SelectedItem.StringItem];
             ReRender();
         }
 
         private void OnCultureFilterSelected(SelectorVM<SelectorItemVM> obj)
         {
-            this.cultureFilter = this.cultureFilterDict[obj.SelectedItem.StringItem];
+            _cultureFilterValue = CultureFilterDict[obj.SelectedItem.StringItem];
             ReRender();
         }
 
         private void OnTierFilterSelected(SelectorVM<SelectorItemVM> obj)
         {
-            this.tierFilter = this.tierFilterDict[obj.SelectedItem.StringItem];
+            _tierFilterValue = TierFilterDict[obj.SelectedItem.StringItem];
             ReRender();
         }
 
         private void OnItemTypeFilterSelected(SelectorVM<SelectorItemVM> obj)
         {
-            this.itemTypeFilter = this.itemTypeDict[obj.SelectedItem.StringItem];
+            _itemTypeFilterValue = ItemTypeDict[obj.SelectedItem.StringItem];
             ReRender();
         }
 
         public void OnTick()
         {
-            if (lastRenderedIndex == ItemsList.Count) return;
+            if (ItemsList == null || _lastRenderedIndex >= ItemsList.Count) return;
 
-            int maxIndex = (ItemsList.Count - lastRenderedIndex) > maxItemsRenderedPerTick ? lastRenderedIndex + maxItemsRenderedPerTick : ItemsList.Count;
-            for (int i = lastRenderedIndex; i < maxIndex - 1; i++)
+            int maxIndex = Math.Min(_lastRenderedIndex + MaxItemsRenderedPerTick, ItemsList.Count);
+
+            for (int i = _lastRenderedIndex; i < maxIndex; i++)
             {
                 dynamic item = ItemsList[i];
-                if (this.NameFilter != null && this.NameFilter != "" && !item.Item.Name.ToString().ToLower().Contains(this.NameFilter.ToLower())) continue;
-                if (stockFilter != null && (((bool)stockFilter && !(item.Stock > 0)) || (!(bool)stockFilter && (item.Stock != 0)))) continue;
-                if (cultureFilter != null && item.Item.Culture.StringId != cultureFilter) continue;
-                if (tierFilter != null && item.Tier != tierFilter) continue;
-                if (itemTypeFilter != null && item.Item.Type != itemTypeFilter) continue;
+                if (!string.IsNullOrEmpty(_nameFilter) && !item.Item.Name.ToString().ToLower().Contains(_nameFilter.ToLower())) continue;
+                if (_stockFilterValue != null && (_stockFilterValue.Value ? item.Stock <= 0 : item.Stock > 0)) continue;
+                if (_cultureFilterValue != null && item.Item.Culture.StringId != _cultureFilterValue) continue;
+                if (_tierFilterValue != null && item.Tier != _tierFilterValue) continue;
+                if (_itemTypeFilterValue != null && item.Item.Type != _itemTypeFilterValue) continue;
 
                 AddItem(item, i);
             }
 
-            lastRenderedIndex = maxIndex;
+            _lastRenderedIndex = maxIndex;
         }
 
-        public List<U> ItemsList { get => items; set => items = value; }
+        public List<U> ItemsList
+        {
+            get => _items;
+            set => _items = value ?? new List<U>();
+        }
 
         [DataSourceProperty]
         public MBBindingList<T> FilteredItemList
         {
-            get => this._filteredItemList;
-            set
-            {
-                if (value != this._filteredItemList)
-                {
-                    this._filteredItemList = value;
-                    base.OnPropertyChangedWithValue(value, "FilteredItemList");
-                }
-            }
+            get => _filteredItemList;
+            set => SetProperty(ref _filteredItemList, value, nameof(FilteredItemList));
         }
 
         [DataSourceProperty]
         public PEInventoryVM PlayerInventory
         {
-            get => this._playerInventory;
-            set
-            {
-                if (value != this._playerInventory)
-                {
-                    this._playerInventory = value;
-                    base.OnPropertyChangedWithValue(value, "PlayerInventory");
-                }
-            }
+            get => _playerInventory;
+            set => SetProperty(ref _playerInventory, value, nameof(PlayerInventory));
         }
 
         [DataSourceProperty]
         public string NameFilter
         {
-            get => this._nameFilter;
+            get => _nameFilter;
             set
             {
-                if (value != this._nameFilter)
+                if (SetProperty(ref _nameFilter, value, nameof(NameFilter)))
                 {
-                    this._nameFilter = value;
-                    base.OnPropertyChangedWithValue(value, "NameFilter");
-                    this.lastRenderedIndex = 0;
-                    this.FilteredItemList.Clear();
+                    ReRender();
                 }
             }
         }
 
         [DataSourceProperty]
-        public SelectorVM<SelectorItemVM> StockFilter
-        {
-            get => this._stockFilter;
-            set
-            {
-                if (this._stockFilter != value)
-                {
-                    this._stockFilter = value;
-                    base.OnPropertyChangedWithValue(value, "StockFilter");
-                }
-            }
-        }
+        public SelectorVM<SelectorItemVM> StockFilter { get; set; }
 
         [DataSourceProperty]
-        public SelectorVM<SelectorItemVM> CultureFilter
-        {
-            get => this._cultureFilter;
-            set
-            {
-                if (this._cultureFilter != value)
-                {
-                    this._cultureFilter = value;
-                    base.OnPropertyChangedWithValue(value, "CultureFilter");
-                }
-            }
-        }
+        public SelectorVM<SelectorItemVM> CultureFilter { get; set; }
 
         [DataSourceProperty]
-        public SelectorVM<SelectorItemVM> TierFilter
-        {
-            get => this._tierFilter;
-            set
-            {
-                if (this._tierFilter != value)
-                {
-                    this._tierFilter = value;
-                    base.OnPropertyChangedWithValue(value, "TierFilter");
-                }
-            }
-        }
+        public SelectorVM<SelectorItemVM> TierFilter { get; set; }
 
         [DataSourceProperty]
-        public SelectorVM<SelectorItemVM> ItemTypeFilter
+        public SelectorVM<SelectorItemVM> ItemTypeFilter { get; set; }
+
+        private bool SetProperty<TValue>(ref TValue field, TValue newValue, string propertyName)
         {
-            get => this._itemTypeFilter;
-            set
-            {
-                if (this._itemTypeFilter != value)
-                {
-                    this._itemTypeFilter = value;
-                    base.OnPropertyChangedWithValue(value, "ItemTypeFilter");
-                }
-            }
+            if (EqualityComparer<TValue>.Default.Equals(field, newValue)) return false;
+            field = newValue;
+            base.OnPropertyChanged(propertyName);
+            return true;
         }
     }
 }

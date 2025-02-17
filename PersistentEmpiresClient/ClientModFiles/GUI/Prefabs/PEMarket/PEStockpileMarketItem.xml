@@ -2,8 +2,6 @@
 	<Parameters>
 		<Parameter Name="ItemDataSource" DefaultValue="" />
 	</Parameters>
-	<Constants>
-	</Constants>
 
 	<Window>
 		<ButtonWidget DataSource="*ItemDataSource" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren"
@@ -11,46 +9,64 @@
 		  Command.HoverEnd="ExecuteHoverEnd" DoNotPassEventsToChildren="true" IsSelected="@IsSelected">
 
 			<Children>
-				<ListPanel MarginBottom="10" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" StackLayout.LayoutMethod="HorizontalLeftToRight">
+				<ListPanel MarginBottom="10" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren"
+				           StackLayout.LayoutMethod="HorizontalLeftToRight">
 					<Children>
 
-						<!-- Item Image -->
+						<!-- Item Bild -->
 						<ImageIdentifierWidget HorizontalAlignment="Left" VerticalAlignment="Center" Id="ImageIdentifier"
 						  DataSource="{ImageIdentifier}" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed"
 						  SuggestedWidth="165" SuggestedHeight="70" ImageId="@Id" AdditionalArgs="@AdditionalArgs"
 						  ImageTypeCode="@ImageTypeCode" MarginBottom="10"/>
 
 						<!-- Item Name -->
-						<TextWidget Text="@ItemName" VerticalAlignment="Center" WidthSizePolicy="Fixed" SuggestedWidth="205"/>
+						<TextWidget Text="@ItemName" VerticalAlignment="Center" WidthSizePolicy="CoverChildren" SuggestedWidth="205"/>
 
-						<!-- Preise -->
-						<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" VerticalAlignment="Center" HorizontalAlignment="Center" StackLayout.LayoutMethod="VerticalBottomToTop">
+						<!-- Preise & Stock -->
+						<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren"
+						           VerticalAlignment="Center" HorizontalAlignment="Center" StackLayout.LayoutMethod="VerticalBottomToTop">
 							<Children>
 
-								<!-- Buy & Sell Prices -->
-								<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" VerticalAlignment="Center" HorizontalAlignment="Center" StackLayout.LayoutMethod="HorizontalLeftToRight">
+								<!-- Buy & Sell Preise -->
+								<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren"
+								           VerticalAlignment="Center" HorizontalAlignment="Center"
+								           StackLayout.LayoutMethod="HorizontalLeftToRight">
 									<Children>
-										<!-- Buy Price -->
-										<BrushWidget VerticalAlignment="Center" HorizontalAlignment="Right" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed"
-										  SuggestedWidth="50" SuggestedHeight="50" Sprite="SPGeneral\InventoryPartyExtension\Extension\gold_icon"/>
-										<TextWidget WidthSizePolicy="CoverChildren" HorizontalAlignment="Right" VerticalAlignment="Center" Brush="PE.Text.Success" IntText="@BuyPrice"/>
-										<TextWidget WidthSizePolicy="CoverChildren" HorizontalAlignment="Right" VerticalAlignment="Center" Brush="PE.Text.Success" Text=" B"/>
+										<!-- Buy Preis -->
+										<BrushWidget VerticalAlignment="Center" HorizontalAlignment="Right"
+										  WidthSizePolicy="Fixed" HeightSizePolicy="Fixed"
+										  SuggestedWidth="40" SuggestedHeight="40" Sprite="SPGeneral\InventoryPartyExtension\Extension\gold_icon"/>
+										<TextWidget WidthSizePolicy="CoverChildren" HorizontalAlignment="Right"
+										  VerticalAlignment="Center" Brush="PE.Text.Success" IntText="@BuyPrice"/>
+										<TextWidget WidthSizePolicy="CoverChildren" HorizontalAlignment="Right"
+										  VerticalAlignment="Center" Brush="PE.Text.Success" Text=" B"/>
 
-										<TextWidget WidthSizePolicy="CoverChildren" HorizontalAlignment="Right" VerticalAlignment="Center" Text=" / "/>
+										<!-- Trennzeichen -->
+										<TextWidget WidthSizePolicy="CoverChildren" HorizontalAlignment="Right"
+										  VerticalAlignment="Center" Text=" / "/>
 
-										<!-- Sell Price -->
-										<BrushWidget VerticalAlignment="Center" HorizontalAlignment="Right" WidthSizePolicy="Fixed" HeightSizePolicy="Fixed"
-										  SuggestedWidth="50" SuggestedHeight="50" Sprite="SPGeneral\InventoryPartyExtension\Extension\gold_icon"/>
-										<TextWidget WidthSizePolicy="CoverChildren" HorizontalAlignment="Right" VerticalAlignment="Center" Brush="PE.Text.Danger" IntText="@SellPrice"/>
-										<TextWidget WidthSizePolicy="CoverChildren" HorizontalAlignment="Right" VerticalAlignment="Center" Brush="PE.Text.Danger" Text=" S"/>
+										<!-- Sell Preis -->
+										<BrushWidget VerticalAlignment="Center" HorizontalAlignment="Right"
+										  WidthSizePolicy="Fixed" HeightSizePolicy="Fixed"
+										  SuggestedWidth="40" SuggestedHeight="40" Sprite="SPGeneral\InventoryPartyExtension\Extension\gold_icon"/>
+										<TextWidget WidthSizePolicy="CoverChildren" HorizontalAlignment="Right"
+										  VerticalAlignment="Center" Brush="PE.Text.Danger" IntText="@SellPrice"/>
+										<TextWidget WidthSizePolicy="CoverChildren" HorizontalAlignment="Right"
+										  VerticalAlignment="Center" Brush="PE.Text.Danger" Text=" S"/>
 									</Children>
 								</ListPanel>
 
-								<!-- Stock Display -->
-								<ListPanel MarginLeft="100" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" VerticalAlignment="Center" HorizontalAlignment="Center" StackLayout.LayoutMethod="HorizontalLeftToRight">
+								<!-- Stock Anzeige -->
+								<ListPanel MarginLeft="80" WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren"
+								           VerticalAlignment="Center" HorizontalAlignment="Center"
+								           StackLayout.LayoutMethod="HorizontalLeftToRight">
 									<Children>
-										<TextWidget HorizontalAlignment="Center" Text="Stock:" Brush="PE.SmallText.Info" HeightSizePolicy="CoverChildren" WidthSizePolicy="CoverChildren"/>
-										<TextWidget HorizontalAlignment="Center" MarginLeft="5" IntText="@Stock" Brush="PE.SmallText.Info" HeightSizePolicy="CoverChildren" WidthSizePolicy="CoverChildren"/>
+										<TextWidget HorizontalAlignment="Center" Text="Stock:"
+										  Brush="PE.SmallText.Info" HeightSizePolicy="CoverChildren"
+										  WidthSizePolicy="CoverChildren"/>
+										<TextWidget HorizontalAlignment="Center" MarginLeft="5" IntText="@Stock"
+										  Brush="PE.SmallText.Info" HeightSizePolicy="CoverChildren"
+										  WidthSizePolicy="CoverChildren"/>
 									</Children>
 								</ListPanel>
 

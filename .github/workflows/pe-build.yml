@@ -1,16 +1,16 @@
-name: pe-build
+﻿name: pe-build
 
 on:
   workflow_call:
     inputs:
       build_project:
-        description: "Whether to build Client or Server files"
+        description: "Build target: Client or Server"
         required: true
         type: string
   workflow_dispatch:
     inputs:
       build_project:
-        description: "Whether to build Client or Server files"
+        description: "Select whether to build Client or Server"
         required: true
         type: choice
         options:
@@ -18,7 +18,8 @@ on:
         - Server
 
 env:
-  SOLUTION_FILE_PATH: PersistentEmpires${{inputs.build_project}}/PersistentEmpires${{inputs.build_project}}.sln
+  SOLUTION_FILE_PATH: PersistentEmpires${{ inputs.build_project }}/PersistentEmpires${{ inputs.build_project }}.sln
+  PUBLISH_DIR: publish/${{ inputs.build_project }}
 
 permissions:
   contents: read
@@ -29,24 +30,33 @@ jobs:
     environment: development
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Setup .NET Core
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: 🛠️ Setup .NET Core
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 6.0.x
-    - name: Add MSBuild to PATH
+        dotnet-version: "6.0.x"
+
+    - name: 🔨 Add MSBuild to PATH
       uses: microsoft/setup-msbuild@v2
 
-    - name: Build
-      run: dotnet publish -p:PublishProfile=${{inputs.build_project}}-win-x64 ${{env.SOLUTION_FILE_PATH}}
+    - name: 📦 Restore Dependencies
+      run: dotnet restore ${{ env.SOLUTION_FILE_PATH }}
+      continue-on-error: false
 
-    - name: Build Linux x64 Server
-      run: dotnet publish -p:PublishProfile=${{inputs.build_project}}-linux-x64 ${{env.SOLUTION_FILE_PATH}}
-      if: ${{inputs.build_project == 'Server'}}
+    - name: 🚀 Build & Publish (Windows)
+      run: dotnet publish -p:PublishProfile=${{ inputs.build_project }}-win-x64 -o ${{ env.PUBLISH_DIR }}/win-x64 ${{ env.SOLUTION_FILE_PATH }}
+      continue-on-error: false
 
-    - name: Upload artifacts
+    - name: 🐧 Build & Publish (Linux x64 Server)
+      run: dotnet publish -p:PublishProfile=${{ inputs.build_project }}-linux-x64 -o ${{ env.PUBLISH_DIR }}/linux-x64 ${{ env.SOLUTION_FILE_PATH }}
+      if: inputs.build_project == 'Server'
+      continue-on-error: false
+
+    - name: ☁️ Upload Build Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: ${{inputs.build_project}}-Publish
-        retention-days: 1
-        path: 'publish'
+        name: ${{ inputs.build_project }}-Publish
+        path: ${{ env.PUBLISH_DIR }}
+        retention-days: 3
