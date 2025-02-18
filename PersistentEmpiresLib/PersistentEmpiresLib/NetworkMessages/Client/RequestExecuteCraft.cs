@@ -1,5 +1,7 @@
 ﻿using TaleWorlds.MountAndBlade;
 using TaleWorlds.MountAndBlade.Network.Messages;
+using PersistentEmpiresLib.Data;
+using PersistentEmpiresLib.Helpers;
 
 namespace PersistentEmpiresLib.NetworkMessages.Server
 {
@@ -39,6 +41,17 @@ namespace PersistentEmpiresLib.NetworkMessages.Server
         {
             GameNetworkMessage.WriteIntToPacket(this.PlayerID, new CompressionInfo.Integer(0, 10000, true));
             GameNetworkMessage.WriteStringToPacket(this.ItemID);
+        }
+
+        public bool ValidateCraftingRequest()
+        {
+            var playerBlueprints = BlueprintResearchSystem.GetPlayerBlueprints(PlayerID);
+            if (!playerBlueprints.Contains(ItemID))
+            {
+                InformationManager.DisplayMessage(new InformationMessage($"❌ Fehler: Spieler {PlayerID} hat {ItemID} nicht erforscht!"));
+                return false;
+            }
+            return true;
         }
     }
 }

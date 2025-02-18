@@ -1,94 +1,53 @@
-﻿using PersistentEmpiresLib.SceneScripts;
+﻿using PersistentEmpiresLib.Data;
+using PersistentEmpiresLib.Helpers;
 using TaleWorlds.MountAndBlade;
 using TaleWorlds.MountAndBlade.Network.Messages;
+using System.Collections.Generic;
 using System.Linq;
 
-namespace PersistentEmpiresLib.NetworkMessages.Server
+namespace PersistentEmpiresClient.ViewModels
 {
-    [DefineGameNetworkMessageTypeForMod(GameNetworkMessageSendType.FromServer)]
-    public sealed class CraftingCompleted : GameNetworkMessage
+    public class PECraftingStationVM : ViewModel
     {
-        public NetworkCommunicator Player { get; private set; }
-        public string CraftedItem { get; private set; }
-        public PEFactionSmithing CraftingStation { get; private set; }
+        private MBBindingList<PECraftingRecipeVM> _availableRecipes;
 
-        public CraftingCompleted() { }
-
-        public CraftingCompleted(NetworkCommunicator player, string craftedItem, PEFactionSmithing craftingStation)
+        public PECraftingStationVM()
         {
-            this.Player = player ?? throw new System.ArgumentNullException(nameof(player), "❌ Fehler: Spieler ist null in CraftingCompleted!");
-            this.CraftedItem = craftedItem ?? throw new System.ArgumentNullException(nameof(craftedItem), "❌ Fehler: Kein Item angegeben!");
-            this.CraftingStation = craftingStation ?? throw new System.ArgumentNullException(nameof(craftingStation), "❌ Fehler: CraftingStation ist null!");
+            AvailableRecipes = new MBBindingList<PECraftingRecipeVM>();
+            LoadAvailableRecipes();
         }
 
-        protected override MultiplayerMessageFilter OnGetLogFilter()
+        [DataSourceProperty]
+        public MBBindingList<PECraftingRecipeVM> AvailableRecipes
         {
-            return MultiplayerMessageFilter.MissionObjects;
+            get => _availableRecipes;
+            set
+            {
+                if (value != _availableRecipes)
+                {
+                    _availableRecipes = value;
+                    OnPropertyChanged(nameof(AvailableRecipes));
+                }
+            }
         }
 
-        protected override string OnGetLogFormat()
+        private void LoadAvailableRecipes()
         {
-            return this.Player != null
-                ? $"✅ Crafting abgeschlossen: {CraftedItem} für {Player.UserName}"
-                : "⚠️ Fehler: Spieler ist NULL beim Crafting-Abschluss!";
+            var playerBlueprints = BlueprintResearchSystem.GetPlayerBlueprints();
+            var allRecipes = CraftingRecipeDatabase.GetAllRecipes();
+
+            AvailableRecipes.Clear();
+            foreach (var recipe in allRecipes)
+            {
+                bool isUnlocked = playerBlueprints.Contains(recipe.BlueprintID);
+                AvailableRecipes.Add(new PECraftingRecipeVM(recipe, isUnlocked));
+            }
         }
 
-        protected override bool OnRead()
+        public void RefreshAvailableRecipes()
         {
-            bool result = true;
-            this.Player = GameNetworkMessage.ReadNetworkPeerReferenceFromPacket(ref result);
-            this.CraftedItem = GameNetworkMessage.ReadStringFromPacket(ref result);
-            this.CraftingStation = Mission.Current?.GetMissionBehavior<PEFactionSmithing>();
-
-            if (!result || this.Player == null || string.IsNullOrEmpty(this.CraftedItem))
-            {
-                InformationManager.DisplayMessage(new InformationMessage("⚠️ Fehler beim Lesen der Crafting-Daten!"));
-                return false;
-            }
-
-            return true;
-        }
-
-        protected override void OnWrite()
-        {
-            if (this.Player == null || string.IsNullOrEmpty(this.CraftedItem))
-            {
-                InformationManager.DisplayMessage(new InformationMessage("⚠️ Fehler: Ungültige Daten für Crafting-Abschluss!"));
-                return;
-            }
-
-            GameNetworkMessage.WriteNetworkPeerReferenceToPacket(this.Player);
-            GameNetworkMessage.WriteStringToPacket(this.CraftedItem);
-        }
-
-        public void ApplyCraftingCompletion()
-        {
-            if (CraftingStation == null)
-            {
-                InformationManager.DisplayMessage(new InformationMessage("⚠️ Fehler: Keine gültige Schmiede gefunden!"));
-                return;
-            }
-
-            if (!CraftingStation.CanCraftItem(CraftedItem))
-            {
-                InformationManager.DisplayMessage(new InformationMessage($"❌ Fehler: {CraftedItem} ist nicht in den Blueprints dieser Schmiede!"));
-                return;
-            }
-
-            // Übergibt das gecraftete Item an den Spieler
-            if (PlayerInventory.AddItemToPlayer(Player, CraftedItem))
-            {
-                InformationManager.DisplayMessage(new InformationMessage($"🎁 {CraftedItem} wurde erfolgreich an {Player.UserName} übergeben!"));
-
-                // Sende das Event an den Client
-                GameNetwork.BeginBroadcastModuleEvent();
-                GameNetwork.WriteMessage(new CraftingCompleted(Player, CraftedItem, CraftingStation));
-                GameNetwork.EndBroadcastModuleEvent(GameNetwork.EventBroadcastFlags.None, null);
-            }
-            else
-            {
-                InformationManager.DisplayMessage(new InformationMessage($"⚠️ Fehler: {CraftedItem} konnte nicht ins Inventar gelegt werden!"));
-            }
+            LoadAvailableRecipes();
+            OnPropertyChanged(nameof(AvailableRecipes));
         }
     }
 }
