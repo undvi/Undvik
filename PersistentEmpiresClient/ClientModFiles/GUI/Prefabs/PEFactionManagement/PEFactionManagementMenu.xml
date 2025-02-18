@@ -12,109 +12,59 @@
 				<Standard.Window Parameter.Title="Faction Management">
 					<Children>
 
+						<!-- Fraktionsinformationen -->
+						<TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="40" Brush.FontSize="24" Text="Faction Details" />
+						<TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="30" Text="Faction Name: @FactionName" />
+						<TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="30" Text="Prestige: @FactionPrestige" />
+						<TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="30" Text="Gold: @FactionGold" />
+						<TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="30" Text="Max Members: @MaxMembers" />
+
+						<!-- Mitgliederverwaltung -->
+						<ButtonWidget Command.Click="ExecuteAddMember" IsEnabled="@CanAddMember">
+							<TextWidget Text="Add Member" />
+						</ButtonWidget>
+						<ButtonWidget Command.Click="ExecuteRemoveMember">
+							<TextWidget Text="Remove Member" />
+						</ButtonWidget>
+
 						<!-- Diplomatie-Optionen -->
 						<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="250">
 							<Children>
-
-								<!-- Diplomatie-Überschrift -->
 								<TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" Brush.FontSize="24" Text="Diplomatic Actions" />
 
-								<!-- Hinweis zum Cooldown -->
-								<TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="40"
-								            Text="@DiplomacyCooldownRemaining" VerticalAlignment="Center"
-								            HorizontalAlignment="Center" IsVisible="@IsCooldownActive"/>
-
-								<!-- Diplomatie-Buttons -->
-								<ButtonWidget DoNotPassEventsToChildren="true" UpdateChildrenStates="true"
-								              WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed"
-								              SuggestedHeight="!Button.Height" HorizontalAlignment="Center"
-								              Brush="WideButton.Flat" Command.Click="ExecuteDeclareDiplomacy"
-								              Command.Parameter="DeclareWar"
-								              IsEnabled="@CanDeclareDiplomacy" MarginBottom="!Button.Margin">
-									<Children>
-										<TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren"
-										            VerticalAlignment="Center" Brush="MPLobby.PlayButton.Text"
-										            Brush.FontSize="22" Text="Declare War" />
-									</Children>
+								<ButtonWidget Command.Click="ExecuteDeclareDiplomacy" Command.Parameter="DeclareWar" IsEnabled="@CanDeclareDiplomacy">
+									<TextWidget Text="Declare War" />
 								</ButtonWidget>
-
-								<ButtonWidget DoNotPassEventsToChildren="true" UpdateChildrenStates="true"
-								              WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed"
-								              SuggestedHeight="!Button.Height" HorizontalAlignment="Center"
-								              Brush="WideButton.Flat" Command.Click="ExecuteDeclareDiplomacy"
-								              Command.Parameter="MakePeace"
-								              IsEnabled="@CanDeclareDiplomacy" MarginBottom="!Button.Margin">
-									<Children>
-										<TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren"
-										            VerticalAlignment="Center" Brush="MPLobby.PlayButton.Text"
-										            Brush.FontSize="22" Text="Make Peace" />
-									</Children>
+								<ButtonWidget Command.Click="ExecuteDeclareDiplomacy" Command.Parameter="MakePeace" IsEnabled="@CanDeclareDiplomacy">
+									<TextWidget Text="Make Peace" />
 								</ButtonWidget>
-
-								<ButtonWidget DoNotPassEventsToChildren="true" UpdateChildrenStates="true"
-								              WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed"
-								              SuggestedHeight="!Button.Height" HorizontalAlignment="Center"
-								              Brush="WideButton.Flat" Command.Click="ExecuteDeclareDiplomacy"
-								              Command.Parameter="TradeAgreement"
-								              IsEnabled="@CanDeclareDiplomacy" MarginBottom="!Button.Margin">
-									<Children>
-										<TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren"
-										            VerticalAlignment="Center" Brush="MPLobby.PlayButton.Text"
-										            Brush.FontSize="22" Text="Trade Agreement" />
-									</Children>
+								<ButtonWidget Command.Click="ExecuteDeclareDiplomacy" Command.Parameter="TradeAgreement" IsEnabled="@CanDeclareDiplomacy">
+									<TextWidget Text="Trade Agreement" />
 								</ButtonWidget>
-
-								<ButtonWidget DoNotPassEventsToChildren="true" UpdateChildrenStates="true"
-								              WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed"
-								              SuggestedHeight="!Button.Height" HorizontalAlignment="Center"
-								              Brush="WideButton.Flat" Command.Click="ExecuteDeclareDiplomacy"
-								              Command.Parameter="Alliance"
-								              IsEnabled="@CanDeclareDiplomacy" MarginBottom="!Button.Margin">
-									<Children>
-										<TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren"
-										            VerticalAlignment="Center" Brush="MPLobby.PlayButton.Text"
-										            Brush.FontSize="22" Text="Form Alliance" />
-									</Children>
-								</ButtonWidget>
-
-								<ButtonWidget DoNotPassEventsToChildren="true" UpdateChildrenStates="true"
-								              WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed"
-								              SuggestedHeight="!Button.Height" HorizontalAlignment="Center"
-								              Brush="WideButton.Flat" Command.Click="ExecuteDeclareDiplomacy"
-								              Command.Parameter="Vassal"
-								              IsEnabled="@CanDeclareDiplomacy" MarginBottom="!Button.Margin">
-									<Children>
-										<TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren"
-										            VerticalAlignment="Center" Brush="MPLobby.PlayButton.Text"
-										            Brush.FontSize="22" Text="Offer Vassalage" />
-									</Children>
-								</ButtonWidget>
-
 							</Children>
 						</ListPanel>
 
 						<!-- Fraktions-Rang-Upgrade Panel -->
 						<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="200">
 							<Children>
-
 								<TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" Brush.FontSize="24" Text="Faction Rank Management" />
-
-								<TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed"
-								            SuggestedHeight="40" Text="Current Rank: @CurrentRank"
-								            VerticalAlignment="Center" HorizontalAlignment="Center"/>
-
-								<ButtonWidget DoNotPassEventsToChildren="true" UpdateChildrenStates="true"
-								              WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed"
-								              SuggestedHeight="!Button.Height" HorizontalAlignment="Center"
-								              Brush="WideButton.Flat" Command.Click="ExecuteUpgradeFaction"
-								              IsEnabled="@CanUpgradeRank" MarginBottom="!Button.Margin">
-									<Children>
-										<TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren"
-										            VerticalAlignment="Center" Brush="MPLobby.PlayButton.Text"
-										            Brush.FontSize="22" Text="Upgrade Faction Rank" />
-									</Children>
+								<TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="40" Text="Current Rank: @CurrentRank" />
+								<ButtonWidget Command.Click="ExecuteUpgradeFaction" IsEnabled="@CanUpgradeRank">
+									<TextWidget Text="Upgrade Faction Rank" />
 								</ButtonWidget>
+							</Children>
+						</ListPanel>
 
+						<!-- Erbfolge- & Umsturzmechanik -->
+						<ListPanel WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="150">
+							<Children>
+								<TextWidget WidthSizePolicy="StretchToParent" HeightSizePolicy="CoverChildren" Brush.FontSize="24" Text="Leadership Management" />
+								<ButtonWidget Command.Click="ExecuteNominateSuccessor">
+									<TextWidget Text="Nominate Successor" />
+								</ButtonWidget>
+								<ButtonWidget Command.Click="ExecuteOverthrowLeader" IsEnabled="@CanOverthrowLeader">
+									<TextWidget Text="Overthrow Leader" />
+								</ButtonWidget>
 							</Children>
 						</ListPanel>
 
@@ -124,4 +74,3 @@
 		</Widget>
 	</Window>
 </Prefab>
-

@@ -38,6 +38,9 @@
 											</Children>
 										</ListPanel>
 
+										<!-- Mitgliederbeschränkung -->
+										<TextWidget WidthSizePolicy="StretchToParent" Text="Max Members: @MaxMembers" Brush.FontSize="22" MarginBottom="10" HorizontalAlignment="Center" />
+
 										<!-- Scrollable Player List -->
 										<ScrollablePanel Id="EntriesListScrollablePanel" HeightSizePolicy="StretchToParent" WidthSizePolicy="StretchToParent" InnerPanel="EntriesListRect\EntriesList" ClipRect="EntriesListRect" MouseScrollAxis="Vertical" VerticalScrollbar="..\..\EntriesListScrollbar\Scrollbar" MarginLeft="0" AutoHideScrollBars="true">
 											<Children>
@@ -49,12 +52,7 @@
 																<!-- Player List Entry -->
 																<ButtonWidget Command.Click="OnSelection" DoNotPassEventsToChildren="true" WidthSizePolicy="StretchToParent" HeightSizePolicy="Fixed" SuggestedHeight="!Entry.Height" MarginLeft="15" HorizontalAlignment="Left" VerticalAlignment="Center" Brush="PE.FactionMember.Button" IsSelected="@IsSelected">
 																	<Children>
-																		<ListPanel HeightSizePolicy="StretchToParent" WidthSizePolicy="StretchToParent" StackLayout.LayoutMethod="HorizontalLeftToRight">
-																			<Children>
-																				<Widget WidthSizePolicy="Fixed" MarginLeft="35" HeightSizePolicy="Fixed" SuggestedWidth="33" SuggestedHeight="27" Sprite="General\Icons\icon_quest_done_checkmark" HorizontalAlignment="Left" VerticalAlignment="Center" IsVisible="@IsGranted" />
-																				<TextWidget WidthSizePolicy="CoverChildren" MarginLeft="10" HeightSizePolicy="StretchToParent" SuggestedWidth="100" Text="@UserName" Brush="GameMenu.Leaderboard.Entry.Name.Text" />
-																			</Children>
-																		</ListPanel>
+																		<TextWidget WidthSizePolicy="CoverChildren" MarginLeft="10" HeightSizePolicy="StretchToParent" SuggestedWidth="100" Text="@UserName" Brush="GameMenu.Leaderboard.Entry.Name.Text" />
 																	</Children>
 																</ButtonWidget>
 
@@ -68,22 +66,11 @@
 									</Children>
 								</ListPanel>
 
-								<!-- Scrollbar -->
-								<Standard.VerticalScrollbar Id="EntriesListScrollbar" HorizontalAlignment="Right" VerticalAlignment="Bottom" HeightSizePolicy="StretchToParent" />
-
 							</Children>
 						</ListPanel>
 
 					</Children>
 				</BrushWidget>
-
-				<!-- Title Bar -->
-				<Widget WidthSizePolicy="Fixed" HeightSizePolicy="Fixed" SuggestedWidth="592" SuggestedHeight="161" HorizontalAlignment="Center" VerticalAlignment="Center" PositionYOffset="-336" Sprite="StdAssets\tabbar_popup" VerticalFlip="true" IsDisabled="true">
-					<Children>
-						<RichTextWidget WidthSizePolicy="CoverChildren" HeightSizePolicy="CoverChildren" HorizontalAlignment="Center" MarginTop="35" VerticalAlignment="Center" Brush="Recruitment.Popup.Title.Text" Brush.FontSize="40" IsDisabled="true" Text="@Title" />
-					</Children>
-				</Widget>
-
 			</Children>
 		</Widget>
 	</Window>

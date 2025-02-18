@@ -33,13 +33,15 @@ namespace PersistentEmpiresLib.Factions
         // 🔹 Wirtschaftssystem
         public int Gold { get; set; } = 0;
         public int Influence { get; set; } = 0;
+        public int PrestigePoints { get; set; } = 0;
         public int TaxRate { get; set; } = 10; // Standard-Steuersatz
         public Dictionary<string, int> ResourceBonuses { get; set; } = new Dictionary<string, int>();
         public int ExportBonus { get; set; } = 0;
 
         // 🔹 Fraktionsränge & Mitgliederverwaltung
         public int Rank { get; set; } = 1;
-        public int MaxMembers { get; set; } = 10;
+        public int MaxMembers { get; private set; }
+        public List<string> SuccessorList { get; set; } = new List<string>();
 
         private static Dictionary<int, int> _rankUpgradeCosts = new Dictionary<int, int>
         {
@@ -51,6 +53,10 @@ namespace PersistentEmpiresLib.Factions
             {1, 20}, {2, 30}, {3, 50}, {4, 60}, {5, 80}
         };
 
+        // 🔹 Kriegssystem
+        public enum WarType { Standard, Handelskrieg, Ueberfall, Eroberung }
+        public Dictionary<int, WarType> warTypes { get; set; } = new Dictionary<int, WarType>();
+
         // 🔹 Wachen / Soldaten (Zukünftige KI-Verteidigung)
         public List<string> AI_Guards { get; set; } = new List<string>();
 
@@ -58,87 +64,75 @@ namespace PersistentEmpiresLib.Factions
         //      FUNKTIONEN
         // -------------------------------
 
-        public bool CanUpgradeFaction() => _rankUpgradeCosts.ContainsKey(this.Rank) && this.Gold >= _rankUpgradeCosts[this.Rank];
+        public bool CanUpgradeFaction() => _rankUpgradeCosts.ContainsKey(this.Rank) && this.Gold >= _rankUpgradeCosts[this.Rank] && this.PrestigePoints >= this.Rank * 50;
 
         public void UpgradeFactionRank()
         {
             if (!CanUpgradeFaction()) return;
             this.Gold -= _rankUpgradeCosts[this.Rank];
+            this.PrestigePoints -= this.Rank * 50;
             this.Rank++;
             this.MaxMembers = _maxFactionMembers[this.Rank];
 
             InformationManager.DisplayMessage(new InformationMessage($"Faction {this.name} upgraded to Rank {this.Rank}! Max Members: {this.MaxMembers}"));
         }
 
-        // -------------------------------
-        //      STEUER- & EXPORTSYSTEM
-        // -------------------------------
-
-        public int CalculateTaxIncome()
+        public void GainPrestige(int amount)
         {
-            int totalTax = (this.members.Count * this.TaxRate);
-            this.Gold += totalTax;
-            return totalTax;
+            this.PrestigePoints += amount;
         }
 
-        public int CalculateExportEarnings(int tradeValue)
+        public bool CanAddMember()
         {
-            int earnings = tradeValue + (tradeValue * this.ExportBonus / 100);
-            this.Gold += earnings;
-            return earnings;
+            return this.members.Count < this.MaxMembers;
         }
 
-        // -------------------------------
-        //      DIPLOMATIE-MANAGEMENT
-        // -------------------------------
-
-        public bool IsAtWarWith(int factionId) => this.warDeclaredTo.Contains(factionId);
-        public bool HasTradeAgreementWith(int factionId) => this.tradeAgreements.Contains(factionId);
-        public bool IsAlliedWith(int factionId) => this.alliances.Contains(factionId);
-        public bool IsVassalOf(int factionId) => this.vassals.ContainsKey(factionId);
-
-        public void DeclareWar(int factionId)
+        public bool AddMember(NetworkCommunicator member)
         {
-            if (!this.warDeclaredTo.Contains(factionId))
+            if (CanAddMember())
+            {
+                this.members.Add(member);
+                return true;
+            }
+            return false;
+        }
+
+        public void RemoveMember(NetworkCommunicator member)
+        {
+            this.members.Remove(member);
+        }
+
+        public bool CanDeclareWar()
+        {
+            return this.lordId != "0" || this.marshalls.Contains(this.lordId);
+        }
+
+        public void DeclareWar(int factionId, WarType type)
+        {
+            if (!this.warDeclaredTo.Contains(factionId) && CanDeclareWar())
+            {
                 this.warDeclaredTo.Add(factionId);
+                this.warTypes[factionId] = type;
+            }
         }
 
-        public void MakePeace(int factionId)
+        public void SelectNewLeader()
         {
-            this.warDeclaredTo.Remove(factionId);
+            if (this.SuccessorList.Count > 0)
+            {
+                this.lordId = this.SuccessorList[0];
+                this.SuccessorList.RemoveAt(0);
+            }
         }
 
-        public void SignTradeAgreement(int factionId)
+        public void HireGuard(string guardId)
         {
-            if (!this.tradeAgreements.Contains(factionId))
-                this.tradeAgreements.Add(factionId);
+            this.AI_Guards.Add(guardId);
         }
 
-        public void BreakTradeAgreement(int factionId)
+        public void DeployGuards()
         {
-            this.tradeAgreements.Remove(factionId);
-        }
-
-        public void FormAlliance(int factionId)
-        {
-            if (!this.alliances.Contains(factionId))
-                this.alliances.Add(factionId);
-        }
-
-        public void BreakAlliance(int factionId)
-        {
-            this.alliances.Remove(factionId);
-        }
-
-        public void OfferVassalage(int factionId, string lord)
-        {
-            if (!this.vassals.ContainsKey(factionId))
-                this.vassals[factionId] = lord;
-        }
-
-        public void RevokeVassalage(int factionId)
-        {
-            this.vassals.Remove(factionId);
+            // Logik zur Platzierung von NPC-Wachen
         }
 
         // -------------------------------
@@ -160,25 +154,7 @@ namespace PersistentEmpiresLib.Factions
             this.marshalls = new List<string>();
             this.Rank = 1;
             this.Gold = 0;
-            this.MaxMembers = 10;
-        }
-
-        public Faction(Banner banner, string name)
-        {
-            this.basicCultureObject = MBObjectManager.Instance.GetObject<BasicCultureObject>("empire");
-            this.name = name;
-            this.banner = banner;
-            this.lordId = "0";
-            this.doorManagers = new List<string>();
-            this.chestManagers = new List<string>();
-            this.warDeclaredTo = new List<int>();
-            this.tradeAgreements = new List<int>();
-            this.alliances = new List<int>();
-            this.vassals = new Dictionary<int, string>();
-            this.marshalls = new List<string>();
-            this.Rank = 1;
-            this.Gold = 0;
-            this.MaxMembers = 10;
+            this.MaxMembers = _maxFactionMembers[this.Rank];
         }
     }
 }

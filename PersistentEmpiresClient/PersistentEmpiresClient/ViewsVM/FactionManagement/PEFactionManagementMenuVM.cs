@@ -11,9 +11,13 @@ namespace PersistentEmpires.Views.ViewsVM.FactionManagement
     public class PEFactionManagementMenuVM : ViewModel
     {
         private MBBindingList<ManagementItemVM> _menuItems;
+        private int _maxMembers;
+        private int _currentRank;
+        private int _gold;
 
-        public PEFactionManagementMenuVM(IEnumerable<ManagementItemVM> items)
+        public PEFactionManagementMenuVM(Faction faction, IEnumerable<ManagementItemVM> items)
         {
+            this.Faction = faction;
             this.MenuItems = new MBBindingList<ManagementItemVM>();
             if (items != null)
             {
@@ -22,6 +26,7 @@ namespace PersistentEmpires.Views.ViewsVM.FactionManagement
                     this.MenuItems.Add(item);
                 }
             }
+            this.UpdateFactionData();
             this.RefreshValues();
         }
 
@@ -43,6 +48,13 @@ namespace PersistentEmpires.Views.ViewsVM.FactionManagement
             }
         }
 
+        public void UpdateFactionData()
+        {
+            this.MaxMembers = this.Faction.MaxMembers;
+            this.CurrentRank = this.Faction.Rank;
+            this.Gold = this.Faction.Gold;
+        }
+
         [DataSourceProperty]
         public MBBindingList<ManagementItemVM> MenuItems
         {
@@ -57,13 +69,54 @@ namespace PersistentEmpires.Views.ViewsVM.FactionManagement
             }
         }
 
-        // ✅ **Hinzufügen der Fraktionsrang-Upgrades**
+        [DataSourceProperty]
+        public int MaxMembers
+        {
+            get => this._maxMembers;
+            set
+            {
+                if (value != this._maxMembers)
+                {
+                    this._maxMembers = value;
+                    base.OnPropertyChangedWithValue(value, "MaxMembers");
+                }
+            }
+        }
+
+        [DataSourceProperty]
+        public int CurrentRank
+        {
+            get => this._currentRank;
+            set
+            {
+                if (value != this._currentRank)
+                {
+                    this._currentRank = value;
+                    base.OnPropertyChangedWithValue(value, "CurrentRank");
+                }
+            }
+        }
+
+        [DataSourceProperty]
+        public int Gold
+        {
+            get => this._gold;
+            set
+            {
+                if (value != this._gold)
+                {
+                    this._gold = value;
+                    base.OnPropertyChangedWithValue(value, "Gold");
+                }
+            }
+        }
+
         public static void AddFactionRankUpgradeOption(MBBindingList<ManagementItemVM> menuItems, Faction faction)
         {
-            if (faction.lordId != GameNetwork.MyPeer.VirtualPlayer.ToPlayerId()) return; // ✅ Nur der Lord darf das Upgrade ausführen
+            if (faction.lordId != GameNetwork.MyPeer.VirtualPlayer.ToPlayerId()) return;
 
             int currentRank = faction.Rank;
-            if (currentRank >= 5) return; // ✅ Rang 5 ist das Maximum
+            if (currentRank >= 5) return;
 
             int upgradeCost = GetUpgradeCost(currentRank);
             int newMaxMembers = GetMaxMembers(currentRank + 1);
@@ -87,31 +140,31 @@ namespace PersistentEmpires.Views.ViewsVM.FactionManagement
             ));
         }
 
-        // ✅ **Kosten für das Rang-Upgrade**
         private static int GetUpgradeCost(int rank)
         {
-            switch (rank)
+            return rank switch
             {
-                case 1: return 100000; // Rang 1 → 2 kostet 100000 Gold
-                case 2: return 200000; // Rang 2 → 3 kostet 200000 Gold
-                case 3: return 300000; // Rang 3 → 4 kostet 300000 Gold
-                case 4: return 500000; // Rang 4 → 5 kostet 500000 Gold
-                default: return int.MaxValue;
-            }
+                1 => 100000,
+                2 => 200000,
+                3 => 300000,
+                4 => 500000,
+                _ => int.MaxValue,
+            };
         }
 
-        // ✅ **Maximale Mitglieder für jeden Rang**
         private static int GetMaxMembers(int rank)
         {
-            switch (rank)
+            return rank switch
             {
-                case 1: return 20;
-                case 2: return 30;
-                case 3: return 50;
-                case 4: return 60;
-                case 5: return 80;
-                default: return 80;
-            }
+                1 => 20,
+                2 => 30,
+                3 => 50,
+                4 => 60,
+                5 => 80,
+                _ => 80,
+            };
         }
+
+        public Faction Faction { get; }
     }
 }
