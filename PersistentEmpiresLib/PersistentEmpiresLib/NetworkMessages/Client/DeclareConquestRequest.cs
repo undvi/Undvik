@@ -19,39 +19,43 @@ namespace PersistentEmpiresLib.NetworkMessages.Client
 
 		public DeclareConquestRequest(int factionId, int targetCastleId, ConquestActionType action)
 		{
-			this.FactionId = factionId;
-			this.TargetCastleId = targetCastleId;
-			this.Action = action;
-		}
-
-		public DeclareConquestRequest()
-		{
+			FactionId = factionId;
+			TargetCastleId = targetCastleId;
+			Action = action;
 		}
 
 		protected override bool OnRead()
 		{
 			bool bufferReadValid = true;
-			this.FactionId = GameNetworkMessage.ReadIntFromPacket(ref bufferReadValid);
-			this.TargetCastleId = GameNetworkMessage.ReadIntFromPacket(ref bufferReadValid);
-			this.Action = (ConquestActionType)GameNetworkMessage.ReadIntFromPacket(ref bufferReadValid);
+			FactionId = GameNetworkMessage.ReadIntFromPacket(ref bufferReadValid);
+			TargetCastleId = GameNetworkMessage.ReadIntFromPacket(ref bufferReadValid);
+			Action = (ConquestActionType)GameNetworkMessage.ReadIntFromPacket(ref bufferReadValid);
 			return bufferReadValid;
 		}
 
 		protected override void OnWrite()
 		{
-			GameNetworkMessage.WriteIntToPacket(this.FactionId);
-			GameNetworkMessage.WriteIntToPacket(this.TargetCastleId);
-			GameNetworkMessage.WriteIntToPacket((int)this.Action);
+			GameNetworkMessage.WriteIntToPacket(FactionId);
+			GameNetworkMessage.WriteIntToPacket(TargetCastleId);
+			GameNetworkMessage.WriteIntToPacket((int)Action);
 		}
 
-		protected override MultiplayerMessageFilter OnGetLogFilter()
+		protected override MultiplayerMessageFilter OnGetLogFilter() => MultiplayerMessageFilter.FactionManagement;
+		protected override string OnGetLogFormat() => $"DeclareConquestRequest: Faction {FactionId}, Target {TargetCastleId}, Action {Action}";
+
+		public bool ValidateConquest(Faction faction)
 		{
-			return MultiplayerMessageFilter.FactionManagement;
+			int maxTerritories = faction.GetMaxTerritoriesByRank();
+			if (faction.ControlledTerritories.Count >= maxTerritories)
+			{
+				return false; // Fraktion hat die maximale Anzahl an Gebieten erreicht
+			}
+			return true;
 		}
 
-		protected override string OnGetLogFormat()
+		public bool ValidateVassalOption(Faction faction)
 		{
-			return $"Conquest Request: {Action} by Faction {FactionId} on Castle {TargetCastleId}";
+			return faction.CanCreateVassal(); // Überprüft, ob die Fraktion Vasallenstaaten verwalten kann
 		}
 	}
 }

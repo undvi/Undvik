@@ -1,62 +1,61 @@
-using TaleWorlds.Library;
 using TaleWorlds.MountAndBlade;
 using TaleWorlds.MountAndBlade.Network.Messages;
-using TaleWorlds.ObjectSystem;
 using PersistentEmpiresLib.Factions;
-using System;
 
 namespace PersistentEmpiresLib.NetworkMessages.Client
 {
-	public class DeclareFactionActionRequest : GameNetworkMessage
-	{
-		public enum FactionActionType
-		{
-			AddMember,
-			RemoveMember,
-			UpgradeRank,
-			ChangeLeader,
-			AssignMarshall
-		}
+    public class DeclareConquestRequest : GameNetworkMessage
+    {
+        public enum ConquestActionType
+        {
+            CaptureTerritory,
+            AssignAsVassal,
+            PillageTerritory
+        }
 
-		public int FactionId { get; private set; }
-		public FactionActionType Action { get; private set; }
-		public string TargetPlayerId { get; private set; }
+        public int FactionId { get; private set; }
+        public int TargetCastleId { get; private set; }
+        public ConquestActionType Action { get; private set; }
 
-		public DeclareFactionActionRequest(int factionId, FactionActionType action, string targetPlayerId = "")
-		{
-			this.FactionId = factionId;
-			this.Action = action;
-			this.TargetPlayerId = targetPlayerId;
-		}
+        public DeclareConquestRequest(int factionId, int targetCastleId, ConquestActionType action)
+        {
+            FactionId = factionId;
+            TargetCastleId = targetCastleId;
+            Action = action;
+        }
 
-		public DeclareFactionActionRequest()
-		{
-		}
+        protected override bool OnRead()
+        {
+            bool bufferReadValid = true;
+            FactionId = GameNetworkMessage.ReadIntFromPacket(ref bufferReadValid);
+            TargetCastleId = GameNetworkMessage.ReadIntFromPacket(ref bufferReadValid);
+            Action = (ConquestActionType)GameNetworkMessage.ReadIntFromPacket(ref bufferReadValid);
+            return bufferReadValid;
+        }
 
-		protected override bool OnRead()
-		{
-			bool bufferReadValid = true;
-			this.FactionId = GameNetworkMessage.ReadIntFromPacket(ref bufferReadValid);
-			this.Action = (FactionActionType)GameNetworkMessage.ReadIntFromPacket(ref bufferReadValid);
-			this.TargetPlayerId = GameNetworkMessage.ReadStringFromPacket(ref bufferReadValid);
-			return bufferReadValid;
-		}
+        protected override void OnWrite()
+        {
+            GameNetworkMessage.WriteIntToPacket(FactionId);
+            GameNetworkMessage.WriteIntToPacket(TargetCastleId);
+            GameNetworkMessage.WriteIntToPacket((int)Action);
+        }
 
-		protected override void OnWrite()
-		{
-			GameNetworkMessage.WriteIntToPacket(this.FactionId);
-			GameNetworkMessage.WriteIntToPacket((int)this.Action);
-			GameNetworkMessage.WriteStringToPacket(this.TargetPlayerId);
-		}
+        protected override MultiplayerMessageFilter OnGetLogFilter() => MultiplayerMessageFilter.FactionManagement;
+        protected override string OnGetLogFormat() => $"DeclareConquestRequest: Faction {FactionId}, Target {TargetCastleId}, Action {Action}";
 
-		protected override MultiplayerMessageFilter OnGetLogFilter()
-		{
-			return MultiplayerMessageFilter.FactionManagement;
-		}
+        public bool ValidateConquest(Faction faction)
+        {
+            int maxTerritories = faction.GetMaxTerritoriesByRank();
+            if (faction.ControlledTerritories.Count >= maxTerritories)
+            {
+                return false; // Fraktion hat die maximale Anzahl an Gebieten erreicht
+            }
+            return true;
+        }
 
-		protected override string OnGetLogFormat()
-		{
-			return $"Faction Action Request: {Action} on Faction {FactionId} for Player {TargetPlayerId}";
-		}
-	}
+        public bool ValidateVassalOption(Faction faction)
+        {
+            return faction.CanCreateVassal(); // Überprüft, ob die Fraktion Vasallenstaaten verwalten kann
+        }
+    }
 }
