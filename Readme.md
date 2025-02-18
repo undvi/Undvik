@@ -1,15 +1,8 @@
-Roadmap zur Verbesserung der MOD in RP richtung 
-
-Hier ist eine strukturierte Roadmap für dein Projekt. Diese kannst du auch für dein Team nutzen, damit jeder weiß, welche Features und Anpassungen geplant sind.
-
-
----
-
-Persistent Empires Mod - Erweiterungs-Roadmap
+Persistent Empires Mod - Roadmap
 
 Phase 1: Analyse & Planung
 
-:white_check_mark: Projektstruktur analysieren
+✅ Projektstruktur analysieren:
 
 Identifikation der relevanten Dateien für:
 
@@ -26,86 +19,138 @@ Kriegssystem
 AI-System
 
 Bausystem
-:white_check_mark: Bestehenden Code dokumentieren
-:white_check_mark: Backup des aktuellen Codes erstellen
 
+Diplomatiesystem
+✅ Bestehenden Code dokumentieren
+✅ Backup des aktuellen Codes erstellen
 
+Phase 2: Feature-Entwicklung & Überarbeitung bestehender Systeme
 
+Handelssystem
 
----
+✅ Einflussmechanik für Handel bereits implementiert
+🔲 Exporthandel für Fraktionen:
 
-Phase 2: Neue Features & Überarbeitung bestehender Systeme
+Fraktionen erhalten zufällige Aufträge
 
-1. Handelssystem überarbeiten
+Lieferung der gewünschten Güter zum Exporthafen
 
-:black_square_button: Spielerbasierte Märkte statt statischer Shops
-:black_square_button: Marktstände für Spieler einführen
-:black_square_button: Dynamische Preise & Handelssteuer für Städte & Burgen
+Belohnung in Form von Gold & Einfluss
 
-2. Schmiedesystem erweitern
+Nutzung des bestehenden Einfluss-Systems
 
-:white_check_mark:Schmiede erfordert Bau & Blueprints
-:white_check_mark:Blueprints müssen in einer Akademie erforscht werden
-:white_check_mark:Neue Waffen & Rüstungen freischalten durch Forschung
+Schmiedesystem
 
-3. Klassensystem überarbeiten & begrenzen
+✅ Schmiede erfordert Bau & Blueprints
+✅ Blueprints müssen in einer Akademie erforscht werden
+✅ Neue Waffen & Rüstungen freischalten durch Forschung
 
-:black_square_button: Neue Klassenhierarchie mit festen Limits
-:black_square_button: Exklusive Führungsklassen (Lord, Ritter, Offizier)
-:white_check_mark:Beschränkung auf eine begrenzte Anzahl an Eliteeinheiten
-:black_square_button: Balancing der Geschwindigkeit & Kampfstärken
+Klassensystem
 
-4. Fraktions- & Rängesystem
+🔲 Neue Klassenhierarchie mit festen Limits
+🔲 Exklusive Führungsklassen (Lord, Ritter, Offizier)
+✅ Beschränkung auf eine begrenzte Anzahl an Eliteeinheiten
+🔲 Balancing der Geschwindigkeit & Kampfstärken
 
-:white_check_mark: Adelsränge einführen mit Einfluss auf:
+Fraktions- & Rängesystem
+
+✅ Adelsränge einführen mit Einfluss auf:
 
 Anzahl an besitzbaren Ländereien
 
 Rekrutierbare Truppenarten
-:white_check_mark: Ränge können durch Prestige & Events verdient werden
-:white_check_mark:Ränge sind an den Fraktionsanführer gebunden & nicht übertragbar (außer durch Erbfolge)
+✅ Ränge können durch Prestige & Events verdient werden
+✅ Ränge sind an den Fraktionsanführer gebunden & nicht übertragbar (außer durch Erbfolge)
+✅ Mitgliederbeschränkung pro Rang:
 
-5. Kriegssystem erweitern
-:white_check_mark:Neue Kriegsarten (z. B. Handelskrieg, Überfall, Eroberung)
-:white_check_mark: Kriegserklärung nur mit bestimmtem Adelsrang möglich
-:black_square_button: Eroberungssystem für Dörfer & Burgen erweitern
+Rang 1: 20 Mitglieder
 
-6. AI-System für lebendige NPCs
+Rang 2: 30 Mitglieder
 
-:black_square_button: Dynamische NPCs, die arbeiten, kämpfen & mit Spielern interagieren
-:black_square_button: Bauern sammeln Ressourcen, Schmiede arbeiten in Werkstätten
-:black_square_button: Stadtwachen können Spielern den Weg zeigen
-:black_square_button: Kriegsmodus: NPCs rüsten sich & kämpfen mit
-:black_square_button: Optional: KI-Dialoge mit ChatGPT (falls technisch umsetzbar)
+Rang 3: 50 Mitglieder (+1 Gebiet)
 
-7. Bausystem überarbeiten
+Rang 4: 60 Mitglieder
 
-:black_square_button: Neues Bau-Menü mit Auswahl für Gebäude
-:black_square_button: Platzierung nur an bestimmten Baupunkten möglich
-:black_square_button: Spieler können eigene Gebäude für Handel & Produktion bauen
+Rang 5: 80 Mitglieder (+1 Gebiet)
 
-8. Multiplayer-Integration von neuen Items (optional)
+Kriegssystem
 
-:black_square_button: Versuch, zusätzliche Rüstungen & Waffen in Multiplayer einzufügen
-:black_square_button: Server- und clientseitige Item-Registrierung testen
+✅ Neue Kriegsarten (z. B. Handelskrieg, Überfall, Eroberung)
+✅ Kriegserklärung nur mit bestimmtem Adelsrang möglich
+🔲 Erweiterung des Eroberungssystems für Dörfer & Burgen
 
+Diplomatiesystem
 
----
+✅ Diplomatie-Menü existiert bereits
+🔲 Fehlt: Einflussmechanik für Diplomatieaktionen
+🔲 Fehlt: Implementierung von Allianzen und Vasallenverhältnissen
+🔲 Cooldown für Diplomatie-Aktionen (z. B. 1 Stunde zwischen Anfragen)
+🔲 Nur Fraktionsführer & Marschälle können Diplomatieanfragen stellen
+🔲 Diplomatische Entscheidungen beeinflussen Beziehungen zwischen Fraktionen
+
+AI-System für lebendige NPCs
+
+🔲 Dynamische NPCs, die arbeiten, kämpfen & mit Spielern interagieren
+🔲 Bauern sammeln Ressourcen, Schmiede arbeiten in Werkstätten
+🔲 Stadtwachen können Spielern den Weg zeigen
+🔲 Kriegsmodus: NPCs rüsten sich & kämpfen mit
+🔲 Optional: KI-Dialoge mit ChatGPT (falls technisch umsetzbar)
+
+Bausystem
+
+✅ UI für Bau-Menü existiert bereits
+✅ Fraktionsspezifische & neutrale Bauplätze (erwerbbar)
+✅ Baumaterialien & Stufen:
+
+Stufe 1: Hardwood, Stone, Bretter, Lehm
+
+Stufe 2: Zusätzlich Eisenbarren, Einfluss, Gold
+
+Stufe 3: Mehr Ressourcen von allen
+✅ Gebäudearten & Funktionen:
+
+Lagerhäuser (zur Ressourcenspeicherung)
+
+Waffenschmiede (Crafting von Waffen)
+
+Rüstungsschmiede (Crafting von Rüstungen)
+
+Märkte (Handel mit anderen Spielern)
+
+Hafen (Exportmarkt)
+
+Felder & Farmen (Produktion von Nahrungsmitteln)
+✅ Bau-Gameplay:
+
+Spieler müssen Ressourcen abliefern
+
+Hammer benutzen, um das Gebäude fertigzustellen
+
+Gebäude können abgerissen werden
+✅ Speicherung & Server-Restart:
+
+Alle Gebäude werden in der Datenbank gespeichert
+🔲 Überprüfung des Ressourcenverbrauchs beim Bau
+🔲 Verwaltung der Bauplätze für Spieler verbessern
+
+Multiplayer-Integration von neuen Items (optional)
+
+🔲 Versuch, zusätzliche Rüstungen & Waffen in Multiplayer einzufügen
+🔲 Server- und clientseitige Item-Registrierung testen
 
 Phase 3: Testen & Optimieren
 
-:black_square_button: Alpha-Test mit internen Spielern
-:black_square_button: Balancing-Anpassungen für Klassen, Wirtschaft & Krieg
-:black_square_button: Bugfixing & Performance-Optimierung
-
-
----
+🔲 Alpha-Test mit internen Spielern
+🔲 Balancing-Anpassungen für Klassen, Wirtschaft & Krieg
+🔲 Bugfixing & Performance-Optimierung
 
 Phase 4: Veröffentlichung & Weiterentwicklung
 
-:black_square_button: Beta-Release für die Community
-:black_square_button: Feedback sammeln & Features anpassen
-:black_square_button: Regelmäßige Updates & neue Inhalte
+🔲 Beta-Release für die Community
+🔲 Feedback sammeln & Features anpassen
+🔲 Regelmäßige Updates & neue Inhalte
+
+
 
 
 # Persistent Empires Open Sourced
