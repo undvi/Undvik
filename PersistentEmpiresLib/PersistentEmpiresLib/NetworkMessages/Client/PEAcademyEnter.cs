@@ -3,40 +3,38 @@ using TaleWorlds.MountAndBlade.Network.Messages;
 
 namespace PersistentEmpiresLib.NetworkMessages.Client
 {
-	[DefineGameNetworkMessageTypeForMod(GameNetworkMessageSendType.FromClient)]
-	public sealed class PEAcademyEnter : GameNetworkMessage
-	{
-		public NetworkCommunicator Player { get; private set; }
+    [DefineGameNetworkMessageTypeForMod(GameNetworkMessageSendType.FromClient)]
+    public sealed class PEAcademyEnter : GameNetworkMessage
+    {
+        public int PlayerID { get; private set; }
 
-		public PEAcademyEnter() { }
+        public PEAcademyEnter() { }
 
-		public PEAcademyEnter(NetworkCommunicator player)
-		{
-			this.Player = player ?? throw new System.ArgumentNullException(nameof(player), "❌ Fehler: Spieler ist null in PEAcademyEnter!");
-		}
+        public PEAcademyEnter(int playerId)
+        {
+            this.PlayerID = playerId;
+        }
 
-		protected override MultiplayerMessageFilter OnGetLogFilter()
-		{
-			return MultiplayerMessageFilter.MissionObjects;
-		}
+        protected override MultiplayerMessageFilter OnGetLogFilter()
+        {
+            return MultiplayerMessageFilter.MissionObjects;
+        }
 
-		protected override string OnGetLogFormat()
-		{
-			return this.Player != null
-				? $"📜 {Player.UserName} möchte die Akademie betreten."
-				: "⚠️ Fehler: Kein gültiger Spieler für Akademie-Beitritt!";
-		}
+        protected override string OnGetLogFormat()
+        {
+            return $"📜 Spieler mit ID {PlayerID} möchte die Akademie betreten.";
+        }
 
-		protected override bool OnRead()
-		{
-			bool result = true;
-			this.Player = GameNetworkMessage.ReadNetworkPeerReferenceFromPacket(ref result);
-			return result;
-		}
+        protected override bool OnRead()
+        {
+            bool result = true;
+            this.PlayerID = GameNetworkMessage.ReadIntFromPacket(new CompressionInfo.Integer(0, 10000, true), ref result);
+            return result;
+        }
 
-		protected override void OnWrite()
-		{
-			GameNetworkMessage.WriteNetworkPeerReferenceToPacket(this.Player);
-		}
-	}
+        protected override void OnWrite()
+        {
+            GameNetworkMessage.WriteIntToPacket(this.PlayerID, new CompressionInfo.Integer(0, 10000, true));
+        }
+    }
 }

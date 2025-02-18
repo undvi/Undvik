@@ -10,14 +10,17 @@ namespace PersistentEmpiresClient.ViewsVM
     {
         private int _playerInfluence;
         private MBBindingList<BlueprintItemVM> _availableBlueprints;
+        private MBBindingList<BlueprintResearchVM> _activeResearch;
 
         public PEAcademyVM()
         {
             PlayerInfluence = 0;
             AvailableBlueprints = new MBBindingList<BlueprintItemVM>();
+            ActiveResearch = new MBBindingList<BlueprintResearchVM>();
 
             GameNetwork.MessageHandlerManager.RegisterHandler<PEInfluenceUpdated>(OnInfluenceUpdated);
             GameNetwork.MessageHandlerManager.RegisterHandler<PEAcademyBlueprintsUpdated>(OnBlueprintsUpdated);
+            LoadActiveResearch();
         }
 
         [DataSourceProperty]
@@ -48,9 +51,20 @@ namespace PersistentEmpiresClient.ViewsVM
             }
         }
 
-        /// <summary>
-        /// Spieler betritt die Akademie, falls er genug Einfluss hat.
-        /// </summary>
+        [DataSourceProperty]
+        public MBBindingList<BlueprintResearchVM> ActiveResearch
+        {
+            get => _activeResearch;
+            set
+            {
+                if (value != _activeResearch)
+                {
+                    _activeResearch = value;
+                    OnPropertyChanged(nameof(ActiveResearch));
+                }
+            }
+        }
+
         public void EnterAcademy()
         {
             if (PlayerInfluence < 50)
@@ -64,9 +78,6 @@ namespace PersistentEmpiresClient.ViewsVM
             GameNetwork.EndModuleEventAsClient();
         }
 
-        /// <summary>
-        /// Aktualisiert den Einfluss des Spielers basierend auf Server-Updates.
-        /// </summary>
         private void OnInfluenceUpdated(PEInfluenceUpdated message)
         {
             if (message.Player == GameNetwork.MyPeer)
@@ -75,9 +86,6 @@ namespace PersistentEmpiresClient.ViewsVM
             }
         }
 
-        /// <summary>
-        /// Aktualisiert die freigeschalteten Blueprints.
-        /// </summary>
         private void OnBlueprintsUpdated(PEAcademyBlueprintsUpdated message)
         {
             if (message.Player != GameNetwork.MyPeer) return;
@@ -87,11 +95,19 @@ namespace PersistentEmpiresClient.ViewsVM
             {
                 AvailableBlueprints.Add(new BlueprintItemVM(blueprint));
             }
+            LoadActiveResearch();
         }
 
-        /// <summary>
-        /// Sendet eine Anfrage zum Freischalten eines Blueprints.
-        /// </summary>
+        private void LoadActiveResearch()
+        {
+            var researchList = BlueprintResearchSystem.GetActiveResearch();
+            ActiveResearch.Clear();
+            foreach (var research in researchList)
+            {
+                ActiveResearch.Add(new BlueprintResearchVM(research));
+            }
+        }
+
         public void UnlockBlueprint(int blueprintId)
         {
             GameNetwork.BeginModuleEventAsClient();
@@ -104,78 +120,13 @@ namespace PersistentEmpiresClient.ViewsVM
             base.RefreshValues();
             OnPropertyChanged(nameof(PlayerInfluence));
             OnPropertyChanged(nameof(AvailableBlueprints));
+            OnPropertyChanged(nameof(ActiveResearch));
         }
 
         public void Cleanup()
         {
             GameNetwork.MessageHandlerManager.UnregisterHandler<PEInfluenceUpdated>(OnInfluenceUpdated);
             GameNetwork.MessageHandlerManager.UnregisterHandler<PEAcademyBlueprintsUpdated>(OnBlueprintsUpdated);
-        }
-    }
-
-    /// <summary>
-    /// ViewModel für einzelne Blueprints.
-    /// </summary>
-    public class BlueprintItemVM : ViewModel
-    {
-        private string _name;
-        private int _id;
-        private bool _isUnlocked;
-
-        public BlueprintItemVM(string name, int id, bool isUnlocked)
-        {
-            _name = name;
-            _id = id;
-            _isUnlocked = isUnlocked;
-        }
-
-        public BlueprintItemVM(PEAcademyBlueprint blueprint)
-        {
-            _name = blueprint.Name;
-            _id = blueprint.Id;
-            _isUnlocked = blueprint.IsUnlocked;
-        }
-
-        [DataSourceProperty]
-        public string BlueprintName
-        {
-            get => _name;
-            set
-            {
-                if (value != _name)
-                {
-                    _name = value;
-                    OnPropertyChanged(nameof(BlueprintName));
-                }
-            }
-        }
-
-        [DataSourceProperty]
-        public int BlueprintID
-        {
-            get => _id;
-            set
-            {
-                if (value != _id)
-                {
-                    _id = value;
-                    OnPropertyChanged(nameof(BlueprintID));
-                }
-            }
-        }
-
-        [DataSourceProperty]
-        public bool IsUnlocked
-        {
-            get => _isUnlocked;
-            set
-            {
-                if (value != _isUnlocked)
-                {
-                    _isUnlocked = value;
-                    OnPropertyChanged(nameof(IsUnlocked));
-                }
-            }
         }
     }
 }

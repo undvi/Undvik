@@ -6,21 +6,16 @@ namespace PersistentEmpiresLib.NetworkMessages.Server
     [DefineGameNetworkMessageTypeForMod(GameNetworkMessageSendType.FromServer)]
     public sealed class CraftingStarted : GameNetworkMessage
     {
-        public MissionObject CraftingStation { get; private set; }
-        public NetworkCommunicator Player { get; private set; }
+        public int PlayerID { get; private set; }
+        public int CraftingStationID { get; private set; }
         public int CraftIndex { get; private set; }
 
         public CraftingStarted() { }
 
-        public CraftingStarted(MissionObject craftingStation, NetworkCommunicator player, int craftIndex)
+        public CraftingStarted(int playerId, int craftingStationId, int craftIndex)
         {
-            if (craftingStation == null || player == null)
-            {
-                throw new System.ArgumentNullException("❌ CraftingStarted: Ungültige Parameter übergeben!");
-            }
-
-            this.CraftingStation = craftingStation;
-            this.Player = player;
+            this.PlayerID = playerId;
+            this.CraftingStationID = craftingStationId;
             this.CraftIndex = craftIndex;
         }
 
@@ -31,37 +26,22 @@ namespace PersistentEmpiresLib.NetworkMessages.Server
 
         protected override string OnGetLogFormat()
         {
-            return $"🛠️ Crafting gestartet: {CraftingStation?.Id}, Spieler: {Player?.UserName}, Index: {CraftIndex}";
+            return $"🛠️ Crafting gestartet: Station {CraftingStationID}, Spieler {PlayerID}, Index {CraftIndex}";
         }
 
         protected override bool OnRead()
         {
             bool result = true;
-
-            int missionObjectId = GameNetworkMessage.ReadMissionObjectIdFromPacket(ref result);
-            this.CraftingStation = Mission.MissionNetworkHelper.GetMissionObjectFromMissionObjectId(missionObjectId);
-            this.Player = GameNetworkMessage.ReadNetworkPeerReferenceFromPacket(ref result);
+            this.PlayerID = GameNetworkMessage.ReadIntFromPacket(new CompressionInfo.Integer(0, 10000, true), ref result);
+            this.CraftingStationID = GameNetworkMessage.ReadIntFromPacket(new CompressionInfo.Integer(0, 10000, true), ref result);
             this.CraftIndex = GameNetworkMessage.ReadIntFromPacket(new CompressionInfo.Integer(0, 1024, true), ref result);
-
-            if (!result || this.CraftingStation == null || this.Player == null)
-            {
-                InformationManager.DisplayMessage(new InformationMessage("⚠️ Fehler beim Lesen der Crafting-Daten!"));
-                return false;
-            }
-
             return result;
         }
 
         protected override void OnWrite()
         {
-            if (this.CraftingStation == null || this.Player == null)
-            {
-                InformationManager.DisplayMessage(new InformationMessage("⚠️ Fehler: Keine gültigen Daten für Crafting-Start!"));
-                return;
-            }
-
-            GameNetworkMessage.WriteMissionObjectIdToPacket(this.CraftingStation.Id);
-            GameNetworkMessage.WriteNetworkPeerReferenceToPacket(this.Player);
+            GameNetworkMessage.WriteIntToPacket(this.PlayerID, new CompressionInfo.Integer(0, 10000, true));
+            GameNetworkMessage.WriteIntToPacket(this.CraftingStationID, new CompressionInfo.Integer(0, 10000, true));
             GameNetworkMessage.WriteIntToPacket(this.CraftIndex, new CompressionInfo.Integer(0, 1024, true));
         }
     }

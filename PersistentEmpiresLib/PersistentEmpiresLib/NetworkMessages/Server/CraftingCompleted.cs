@@ -6,18 +6,15 @@ namespace PersistentEmpiresLib.NetworkMessages.Server
     [DefineGameNetworkMessageTypeForMod(GameNetworkMessageSendType.FromServer)]
     public sealed class CraftingCompleted : GameNetworkMessage
     {
-        public NetworkCommunicator Player { get; private set; }
+        public int PlayerID { get; private set; }
+        public string ItemID { get; private set; }
 
         public CraftingCompleted() { }
 
-        public CraftingCompleted(NetworkCommunicator player)
+        public CraftingCompleted(int playerId, string itemId)
         {
-            if (player == null)
-            {
-                throw new System.ArgumentNullException("❌ Fehler: Spieler ist null in CraftingCompleted!");
-            }
-
-            this.Player = player;
+            this.PlayerID = playerId;
+            this.ItemID = itemId;
         }
 
         protected override MultiplayerMessageFilter OnGetLogFilter()
@@ -27,32 +24,21 @@ namespace PersistentEmpiresLib.NetworkMessages.Server
 
         protected override string OnGetLogFormat()
         {
-            return $"✅ Crafting abgeschlossen: {Player?.UserName ?? "Unbekannter Spieler"}";
+            return $"✅ Crafting abgeschlossen: Spieler {PlayerID} hat {ItemID} hergestellt.";
         }
 
         protected override bool OnRead()
         {
             bool result = true;
-            this.Player = GameNetworkMessage.ReadNetworkPeerReferenceFromPacket(ref result);
-
-            if (!result || this.Player == null)
-            {
-                InformationManager.DisplayMessage(new InformationMessage("⚠️ Fehler beim Lesen der Crafting-Daten!"));
-                return false;
-            }
-
+            this.PlayerID = GameNetworkMessage.ReadIntFromPacket(new CompressionInfo.Integer(0, 10000, true), ref result);
+            this.ItemID = GameNetworkMessage.ReadStringFromPacket(ref result);
             return result;
         }
 
         protected override void OnWrite()
         {
-            if (this.Player == null)
-            {
-                InformationManager.DisplayMessage(new InformationMessage("⚠️ Fehler: Keine gültigen Daten für Crafting-Abschluss!"));
-                return;
-            }
-
-            GameNetworkMessage.WriteNetworkPeerReferenceToPacket(this.Player);
+            GameNetworkMessage.WriteIntToPacket(this.PlayerID, new CompressionInfo.Integer(0, 10000, true));
+            GameNetworkMessage.WriteStringToPacket(this.ItemID);
         }
     }
 }
