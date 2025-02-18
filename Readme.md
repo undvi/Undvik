@@ -1,156 +1,159 @@
-Persistent Empires Mod - Roadmap
+1. Forschung & Blueprint-Akademie
 
-Phase 1: Analyse & Planung
+    Forschungssystem (Blueprint-Freischaltung)
+        Ziel: Spieler schalten Blueprints nicht mehr über Timer, sondern durch das Herstellen einer bestimmten Anzahl von Waffen, Rüstungen oder anderen Items frei.
+        Aufgaben:
+            Anpassung der UI und Logik in PEAcademyVM.cs und verwandten Klassen, sodass beim Überprüfen der Voraussetzungen (z. B. Anzahl gecrafteter Items) ein Blueprint sofort freigeschaltet werden kann.
+            Entfernen oder Auslagern von Timer-/Korreoutine-Logik, die ursprünglich zeitbasierte Forschung steuerte.
+            Serverseitige Implementierung:
+                Erfassen und Speichern der hergestellten Items pro Spieler bzw. Fraktion (z. B. in einer Datenbank oder in JSON).
+                Prüfung der Crafting-Zähler im Crafting-Request-Handler (z. B. in RequestExecuteCraft.cs).
+            Feedback an den Client: Senden einer Nachricht (z. B. PEAcademyBlueprintUnlocked.cs), wenn die Bedingungen erfüllt sind.
 
-✅ Projektstruktur analysieren:
+    Mögliche Erweiterungen:
+        Einführung eines kleinen „Tech-Tree“, in dem Abhängigkeiten zwischen Blueprints (z. B. erst IronSword → dann SteelSword) visuell und programmatisch abgebildet werden.
+        Optionale Kombination von Elementen: Neben der reinen Anzahl könnten auch Ressourcen-Kosten oder Prestige-Punkte als Voraussetzung dienen.
 
-Identifikation der relevanten Dateien für:
+2. Crafting-Station & Rezepte
 
-Handelssystem
+    Crafting-UI und Logik
+        Bestehende Dateien: PECraftingStationScreen.cs, PECraftingStationVM.cs, PECraftingRecipeVM.cs
+        Aufgaben:
+            Anpassung der Anzeige: Nur Rezepte, deren zugehöriger Blueprint (Forschung) freigeschaltet wurde, werden aktiv und auswählbar dargestellt – nicht freigeschaltete Rezepte erscheinen ausgegraut oder sind versteckt.
+            Verknüpfung: Sicherstellen, dass jede Rezept-ID eindeutig mit einer Blueprint-ID verknüpft ist.
 
-Schmiedesystem
+    Serverseitige Validierung
+        Beim Erhalt eines Crafting-Requests (z. B. RequestExecuteCraft.cs) muss überprüft werden, ob der entsprechende Blueprint freigeschaltet wurde.
+        Nach erfolgreichem Crafting wird der entsprechende Zähler (z. B. „SwordsCrafted“) erhöht, um den Fortschritt im Forschungssystem zu aktualisieren.
 
-Klassensystem
+3. Fraktions- & Kriegssystem
 
-Fraktions- & Rängesystem
+    Fraktionssystem
+        Aufgaben:
+            Implementierung einer Mitglieder- und Rangstruktur:
+                z. B. Rang 1: max. 20 Mitglieder, Rang 2: max. 30, Rang 3: max. 50 (plus Gebiet), usw.
+            Integration von Adelsrängen und Prestige-Mechanik: Spieler können innerhalb der Fraktion durch Prestige aufsteigen, was Einfluss auf interne Entscheidungen und Kriegsführung hat.
+            Fraktionsübernahme nur durch Erbfolge oder Umsturz ermöglichen, um mehr Stabilität und Struktur zu gewährleisten.
 
-Kriegssystem
+    Kriegssystem
+        Aufgaben:
+            Erweiterung um neue Kriegsarten:
+                Handelskrieg (Blockieren von Handelsrouten)
+                Überfall (kleinere Kriegsaktionen mit Plünderungen)
+                Eroberung (Verbessertes System für Dörfer & Burgen)
+            Einschränkungen: Kriegserklärungen nur für Adelsränge bzw. hohe Fraktionsleiter erlauben.
+            Implementierung von NPC-Unterstützung:
+                NPC-Truppen (Wachtruppen, Stadtwachen, Söldner) als Verstärkung und automatische Verteidigung bei Belagerungen.
+            AI-Unterstützung:
+                Automatischer Ressourcenabbau und Garnisonsbesetzung über einfache AI-Soldaten.
 
-AI-System
+    Datenpersistenz und Automatisierung
+        Alle Fraktionsdaten (Mitglieder, Ränge, Gebietszuweisungen) und Kriegsvorgänge sollten serverseitig persistent gespeichert werden.
+        Eigene Manager-Klassen (z. B. FactionRankManager, WarSystem) zur Trennung der Logik und besseren Skalierbarkeit.
 
-Bausystem
+4. NPC-/AI-System
 
-Diplomatiesystem
-✅ Bestehenden Code dokumentieren
-✅ Backup des aktuellen Codes erstellen
+    Datenstruktur und Speicherung
+        Beispielhafte JSON-Struktur für NPCs:
 
-Phase 2: Feature-Entwicklung & Überarbeitung bestehender Systeme
+        {
+          "npc_id": "NPC_123",
+          "npc_type": "Farmer",
+          "faction_id": "kingdom_x",
+          "current_task": "gather_wood",
+          "location": {
+            "scene": "town_smithy",
+            "position": {"x": 123, "y": 45}
+          },
+          "inventory": {
+            "wood": 10,
+            "grain": 0
+          },
+          "schedule": {
+            "work_start": "06:00",
+            "work_end": "18:00"
+          },
+          "state": "Idle"
+        }
 
-Handelssystem
+        Speicherung der NPC-Daten serverseitig (z. B. in einer Datenbank oder als JSON-Datei).
 
-✅ Einflussmechanik für Handel bereits implementiert
-🔲 Exporthandel für Fraktionen:
+    KI-Logik
+        Aufgaben:
+            Erstellung von NPCAIBehavior.cs für grundlegende Zustandsmaschinen oder Behavior Trees, die Aufgaben wie „gather wood“, „guard city“ oder „travel“ steuern.
+            Entwicklung von AIJobs.cs für spezifische Job-Logik, wie das Anwerben von Söldnern oder das Erfüllen von Aufgaben innerhalb einer Fraktion.
+            Implementierung von AIDatabase.cs für das Laden und Speichern der NPC-Daten.
 
-Fraktionen erhalten zufällige Aufträge
+    Leistungsoptimierung
+        Ticking-Strategien für viele NPCs:
+            Simuliere entfernte NPCs weniger häufig (z. B. durch Hochrechnen), um Performance zu schonen.
 
-Lieferung der gewünschten Güter zum Exporthafen
+5. Handelssystem
 
-Belohnung in Form von Gold & Einfluss
+    Einflussmechanik im Handel
+        ✅ Bereits implementierte Einflussmechanik als Basis.
 
-Nutzung des bestehenden Einfluss-Systems
+    Exporthandel für Fraktionen
+        Aufgaben:
+            Generierung zufälliger Exportaufträge für Fraktionen.
+            Implementierung der Logik, bei der Fraktionen die geforderten Güter zum Exporthafen liefern müssen, um zusätzliche Belohnungen zu erhalten.
+            Integration der Exporthandel-Mechanik in das bestehende Fraktionssystem, sodass Erfüllung von Exportaufträgen Einfluss und möglicherweise Prestige bringt.
 
-Schmiedesystem
+6. Bausystem
 
-✅ Schmiede erfordert Bau & Blueprints
-✅ Blueprints müssen in einer Akademie erforscht werden
-✅ Neue Waffen & Rüstungen freischalten durch Forschung
+    Basis-UI und Bauplätze
+        ✅ Existierendes Bau-Menü.
+        ✅ Verfügbare fraktionsspezifische und neutrale Bauplätze, die erworben werden können.
 
-Klassensystem
+    Baumaterialien & Bau-Stufen
+        Stufe 1: Hardwood, Stone, Bretter, Lehm
+        Stufe 2: Zusätzlich Eisenbarren, Einfluss, Gold
+        Stufe 3: Erhöhte Anforderungen an alle Ressourcen
 
-🔲 Neue Klassenhierarchie mit festen Limits
-🔲 Exklusive Führungsklassen (Lord, Ritter, Offizier)
-✅ Beschränkung auf eine begrenzte Anzahl an Eliteeinheiten
-🔲 Balancing der Geschwindigkeit & Kampfstärken
+    Gebäudearten & Funktionen
+        Lagerhäuser zur Ressourcenspeicherung
+        Waffenschmiede (für Waffen-Crafting)
+        Rüstungsschmiede (für Rüstungs-Crafting)
+        Märkte (für Spieler-Handel)
+        Hafen (Exporthandel)
+        Felder & Farmen (Nahrungsmittelproduktion)
 
-Fraktions- & Rängesystem
+    Bau-Gameplay
+        Ressourcen müssen von Spielern abgeliefert werden.
+        Nutzung eines Hammers, um den Baufortschritt sichtbar zu machen und Gebäude fertigzustellen.
+        Gebäude können auch abgerissen werden.
 
-✅ Adelsränge einführen mit Einfluss auf:
+    Persistenz & Verwaltung
+        ✅ Alle Gebäude werden in der Datenbank gespeichert und bleiben bei Server-Restarts erhalten.
+        🔲 Implementierung einer Überprüfung des tatsächlichen Ressourcenverbrauchs beim Bau.
+        🔲 Optimierung der Verwaltung der Bauplätze, um Spielern einen besseren Überblick zu geben.
 
-Anzahl an besitzbaren Ländereien
+    Belohnungssystem
+        🔲 Fertiggestellte Bauprojekte sollen mit Gold und zusätzlichem Einfluss belohnt werden – unter Nutzung des bestehenden Einfluss-Systems.
 
-Rekrutierbare Truppenarten
-✅ Ränge können durch Prestige & Events verdient werden
-✅ Ränge sind an den Fraktionsanführer gebunden & nicht übertragbar (außer durch Erbfolge)
-✅ Mitgliederbeschränkung pro Rang:
+7. Schmiedesystem
 
-Rang 1: 20 Mitglieder
+    Integration in Bau- und Crafting-Prozesse
+        Aufgaben:
+            Weiterentwicklung der bestehenden Logik in der Waffenschmiede und Rüstungsschmiede.
+            Optimierung des Crafting-Prozesses, um nahtlos zwischen Bau, Crafting und Forschung (Blueprint-Freischaltung) zu verbinden.
+            Optional: Implementierung eines Systems, bei dem das Craften bestimmter Items zusätzliche Blueprints freischaltet, falls dies im Zusammenspiel mit der Akademie gewünscht ist.
 
-Rang 2: 30 Mitglieder
+Zusammenfassung und Ausblick
 
-Rang 3: 50 Mitglieder (+1 Gebiet)
+Diese Roadmap integriert alle relevanten Bereiche:
 
-Rang 4: 60 Mitglieder
+    Forschung & Blueprint-Akademie (item-basiert, keine Timer mehr)
+    Crafting-Station (mit Rezeptvalidierung und serverseitiger Fortschrittsverfolgung)
+    Fraktions- und Kriegssystem (mit Rang-, Prestige- und Kriegsvorgängen inklusive NPC-Unterstützung)
+    NPC-/AI-System (für dynamische, fraktionsbezogene Aufgaben)
+    Handelssystem (mit Exporthandel und Einflussmechanik)
+    Bausystem (mit mehrstufigen Baumaterialien, persistenter Speicherung und Belohnungen)
+    Schmiedesystem (als integraler Bestandteil von Crafting und Bau)
 
-Rang 5: 80 Mitglieder (+1 Gebiet)
+Jedes Modul sollte in sich gut gekapselt sein, sodass Änderungen in einem Bereich (z. B. Forschung durch Crafting) nicht ungewollt in anderen Bereichen zu Problemen führen. Durch klare Trennung der Logik in separate Manager und Services wird die Erweiterbarkeit und Wartbarkeit des Codes langfristig gesichert.
 
-Kriegssystem
-
-✅ Neue Kriegsarten (z. B. Handelskrieg, Überfall, Eroberung)
-✅ Kriegserklärung nur mit bestimmtem Adelsrang möglich
-🔲 Erweiterung des Eroberungssystems für Dörfer & Burgen
-
-Diplomatiesystem
-
-✅ Diplomatie-Menü existiert bereits
-🔲 Fehlt: Einflussmechanik für Diplomatieaktionen
-🔲 Fehlt: Implementierung von Allianzen und Vasallenverhältnissen
-🔲 Cooldown für Diplomatie-Aktionen (z. B. 1 Stunde zwischen Anfragen)
-🔲 Nur Fraktionsführer & Marschälle können Diplomatieanfragen stellen
-🔲 Diplomatische Entscheidungen beeinflussen Beziehungen zwischen Fraktionen
-
-AI-System für lebendige NPCs
-
-🔲 Dynamische NPCs, die arbeiten, kämpfen & mit Spielern interagieren
-🔲 Bauern sammeln Ressourcen, Schmiede arbeiten in Werkstätten
-🔲 Stadtwachen können Spielern den Weg zeigen
-🔲 Kriegsmodus: NPCs rüsten sich & kämpfen mit
-🔲 Optional: KI-Dialoge mit ChatGPT (falls technisch umsetzbar)
-
-Bausystem
-
-✅ UI für Bau-Menü existiert bereits
-✅ Fraktionsspezifische & neutrale Bauplätze (erwerbbar)
-✅ Baumaterialien & Stufen:
-
-Stufe 1: Hardwood, Stone, Bretter, Lehm
-
-Stufe 2: Zusätzlich Eisenbarren, Einfluss, Gold
-
-Stufe 3: Mehr Ressourcen von allen
-✅ Gebäudearten & Funktionen:
-
-Lagerhäuser (zur Ressourcenspeicherung)
-
-Waffenschmiede (Crafting von Waffen)
-
-Rüstungsschmiede (Crafting von Rüstungen)
-
-Märkte (Handel mit anderen Spielern)
-
-Hafen (Exportmarkt)
-
-Felder & Farmen (Produktion von Nahrungsmitteln)
-✅ Bau-Gameplay:
-
-Spieler müssen Ressourcen abliefern
-
-Hammer benutzen, um das Gebäude fertigzustellen
-
-Gebäude können abgerissen werden
-✅ Speicherung & Server-Restart:
-
-Alle Gebäude werden in der Datenbank gespeichert
-🔲 Überprüfung des Ressourcenverbrauchs beim Bau
-🔲 Verwaltung der Bauplätze für Spieler verbessern
-
-Multiplayer-Integration von neuen Items (optional)
-
-🔲 Versuch, zusätzliche Rüstungen & Waffen in Multiplayer einzufügen
-🔲 Server- und clientseitige Item-Registrierung testen
-
-Phase 3: Testen & Optimieren
-
-🔲 Alpha-Test mit internen Spielern
-🔲 Balancing-Anpassungen für Klassen, Wirtschaft & Krieg
-🔲 Bugfixing & Performance-Optimierung
-
-Phase 4: Veröffentlichung & Weiterentwicklung
-
-🔲 Beta-Release für die Community
-🔲 Feedback sammeln & Features anpassen
-🔲 Regelmäßige Updates & neue Inhalte
-
-
+Diese Roadmap bietet dir einen umfassenden Überblick und konkrete To-Dos, um dein Projekt weiterzuentwickeln und zu optimieren.
 
 
 # Persistent Empires Open Sourced
