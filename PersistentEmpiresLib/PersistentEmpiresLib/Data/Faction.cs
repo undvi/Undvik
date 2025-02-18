@@ -13,9 +13,7 @@ namespace PersistentEmpiresLib.Factions
         public string name { get; set; }
         public List<NetworkCommunicator> members = new List<NetworkCommunicator>();
 
-        // ID des Lords
-        public string lordId { get; set; }
-
+        public string lordId { get; set; } // ID des Lords
         public Team team { get; set; }
         public Banner banner { get; set; }
 
@@ -24,7 +22,7 @@ namespace PersistentEmpiresLib.Factions
         public List<string> chestManagers { get; set; }
         public List<string> marshalls { get; set; }
 
-        // Diplomatische Beziehungen
+        // Diplomatie & Vasallen
         public List<int> warDeclaredTo { get; set; }
         public List<int> tradeAgreements { get; set; }
         public List<int> alliances { get; set; }
@@ -32,96 +30,66 @@ namespace PersistentEmpiresLib.Factions
 
         public long pollUnlockedAt { get; set; }
 
-        // Fraktionsrang-System
-        public int Rank { get; set; } = 1;  // Standardmäßig auf Rang 1
-        public int Gold { get; set; } = 0;  // Startkapital
-        public int MaxMembers { get; set; } = 10;  // Standard-Mitgliedergrenze
+        // 🔹 Wirtschaftssystem
+        public int Gold { get; set; } = 0;
+        public int Influence { get; set; } = 0;
+        public int TaxRate { get; set; } = 10; // Standard-Steuersatz
+        public Dictionary<string, int> ResourceBonuses { get; set; } = new Dictionary<string, int>();
+        public int ExportBonus { get; set; } = 0;
 
-        // -------------------------------
-        //      RANK MANAGEMENT
-        // -------------------------------
+        // 🔹 Fraktionsränge & Mitgliederverwaltung
+        public int Rank { get; set; } = 1;
+        public int MaxMembers { get; set; } = 10;
 
         private static Dictionary<int, int> _rankUpgradeCosts = new Dictionary<int, int>
         {
-            {1, 100000},  // Rang 1 → 2 kostet 100000 Gold
-            {2, 200000},  // Rang 2 → 3 kostet 200000 Gold
-            {3, 300000},  // Rang 3 → 4 kostet 300000 Gold
-            {4, 500000},  // Rang 4 → 5 kostet 500000 Gold
+            {1, 100000}, {2, 200000}, {3, 300000}, {4, 500000}
         };
 
         private static Dictionary<int, int> _maxFactionMembers = new Dictionary<int, int>
         {
-            {1, 20},  // Rang 1: Max 10 Mitglieder
-            {2, 30},  // Rang 2: Max 20 Mitglieder
-            {3, 50},  // Rang 3: Max 50 Mitglieder + 1 Land
-            {4, 60},  // Rang 4: Max 60 Mitglieder
-            {5, 80},  // Rang 5: Max 80 Mitglieder + 1 weiteres Land
+            {1, 20}, {2, 30}, {3, 50}, {4, 60}, {5, 80}
         };
 
-        public bool CanUpgradeFaction()
-        {
-            return _rankUpgradeCosts.ContainsKey(this.Rank) && this.Gold >= _rankUpgradeCosts[this.Rank];
-        }
+        // 🔹 Wachen / Soldaten (Zukünftige KI-Verteidigung)
+        public List<string> AI_Guards { get; set; } = new List<string>();
+
+        // -------------------------------
+        //      FUNKTIONEN
+        // -------------------------------
+
+        public bool CanUpgradeFaction() => _rankUpgradeCosts.ContainsKey(this.Rank) && this.Gold >= _rankUpgradeCosts[this.Rank];
 
         public void UpgradeFactionRank()
         {
             if (!CanUpgradeFaction()) return;
-
             this.Gold -= _rankUpgradeCosts[this.Rank];
             this.Rank++;
             this.MaxMembers = _maxFactionMembers[this.Rank];
 
-            InformationManager.DisplayMessage(new InformationMessage($"Faction {this.name} has been upgraded to Rank {this.Rank}! Max Members: {this.MaxMembers}"));
+            InformationManager.DisplayMessage(new InformationMessage($"Faction {this.name} upgraded to Rank {this.Rank}! Max Members: {this.MaxMembers}"));
         }
 
         // -------------------------------
-        //      SERIALIZATION METHODS
+        //      STEUER- & EXPORTSYSTEM
         // -------------------------------
 
-        public string SerializeMarshalls()
+        public int CalculateTaxIncome()
         {
-            return string.Join("|", this.marshalls);
+            int totalTax = (this.members.Count * this.TaxRate);
+            this.Gold += totalTax;
+            return totalTax;
         }
 
-        public void LoadMarshallsFromSerialized(string serialized)
+        public int CalculateExportEarnings(int tradeValue)
         {
-            this.marshalls = serialized?.Split('|').ToList() ?? new List<string>();
-        }
-
-        public string SerializeTradeAgreements()
-        {
-            return string.Join("|", this.tradeAgreements);
-        }
-
-        public void LoadTradeAgreementsFromSerialized(string serialized)
-        {
-            this.tradeAgreements = serialized?.Split('|').Select(int.Parse).ToList() ?? new List<int>();
-        }
-
-        public string SerializeAlliances()
-        {
-            return string.Join("|", this.alliances);
-        }
-
-        public void LoadAlliancesFromSerialized(string serialized)
-        {
-            this.alliances = serialized?.Split('|').Select(int.Parse).ToList() ?? new List<int>();
-        }
-
-        public string SerializeVassals()
-        {
-            return string.Join(";", this.vassals.Select(x => $"{x.Key}:{x.Value}"));
-        }
-
-        public void LoadVassalsFromSerialized(string serialized)
-        {
-            this.vassals = serialized?.Split(';')
-                .Select(x => x.Split(':'))
-                .ToDictionary(x => int.Parse(x[0]), x => x[1]) ?? new Dictionary<int, string>();
+            int earnings = tradeValue + (tradeValue * this.ExportBonus / 100);
+            this.Gold += earnings;
+            return earnings;
         }
 
         // -------------------------------
-        //      DIPLOMACY MANAGEMENT
+        //      DIPLOMATIE-MANAGEMENT
         // -------------------------------
 
         public bool IsAtWarWith(int factionId) => this.warDeclaredTo.Contains(factionId);
@@ -174,7 +142,7 @@ namespace PersistentEmpiresLib.Factions
         }
 
         // -------------------------------
-        //      CONSTRUCTORS
+        //      KONSTRUKTOREN
         // -------------------------------
 
         public Faction(BasicCultureObject basicCultureObject, Banner banner, string name)

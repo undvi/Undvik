@@ -11,6 +11,7 @@ using TaleWorlds.InputSystem;
 using TaleWorlds.Library;
 using TaleWorlds.MountAndBlade;
 using TaleWorlds.ScreenSystem;
+using PersistentEmpiresMod.Trading;
 
 namespace PersistentEmpires.Views.Views
 {
@@ -19,17 +20,36 @@ namespace PersistentEmpires.Views.Views
         private PEImportExportVM _dataSource;
         private ImportExportComponent _importExportComponent;
         private PE_ImportExport ActiveEntity;
+
         public PEImportExport()
         {
-
         }
+
         public override void OnMissionScreenInitialize()
         {
             base.OnMissionScreenInitialize();
             this._importExportComponent = base.Mission.GetMissionBehavior<ImportExportComponent>();
             this._importExportComponent.OnOpenImportExport += this.OnOpen;
-            this._dataSource = new PEImportExportVM(base.HandleClickItem);
+            this._dataSource = new PEImportExportVM(base.HandleClickItem, HandleDeliverGoods);
+            LoadTradeOrders();
         }
+
+        private void LoadTradeOrders()
+        {
+            var activeOrders = ExportTradeSystem.GetActiveTradeOrders();
+            _dataSource.UpdateTradeOrders(activeOrders);
+        }
+
+        private void HandleDeliverGoods(string good, int amount)
+        {
+            var playerFaction = PlayerEncounter.EncounteredMobileParty?.MapFaction;
+            if (playerFaction != null)
+            {
+                ExportTradeSystem.DeliverGoods(playerFaction, good, amount);
+                LoadTradeOrders(); // Aktualisiert das UI nach der Lieferung
+            }
+        }
+
         private void CloseImportExportAux()
         {
             this.IsActive = false;
@@ -37,6 +57,7 @@ namespace PersistentEmpires.Views.Views
             base.MissionScreen.RemoveLayer(this._gauntletLayer);
             this._gauntletLayer = null;
         }
+
         public override void OnMissionTick(float dt)
         {
             base.OnMissionTick(dt);
@@ -45,55 +66,13 @@ namespace PersistentEmpires.Views.Views
                 this.CloseImportExport();
             }
         }
+
         public void CloseImportExport()
         {
             if (this.IsActive)
             {
                 this.CloseImportExportAux();
-
             }
-        }
-        public override void OnAgentRemoved(Agent affectedAgent, Agent affectorAgent, AgentState agentState, KillingBlow blow)
-        {
-            if (affectedAgent.IsMine)
-            {
-                this.CloseImportExport();
-            }
-        }
-        private void OnOpen(PE_ImportExport ImportExportEntity, Inventory PlayerInventory)
-        {
-            if (this.IsActive) return;
-            this.ActiveEntity = ImportExportEntity;
-            this._dataSource.RefreshValues(ImportExportEntity, PlayerInventory, this.ExportItem, this.ImportItem);
-            this._dataSource.PlayerInventory.SetEquipmentSlots(AgentHelpers.GetCurrentAgentEquipment(GameNetwork.MyPeer.ControlledAgent));
-            this._gauntletLayer = new GauntletLayer(50);
-            this._gauntletLayer.IsFocusLayer = true;
-            this._gauntletLayer.InputRestrictions.SetInputRestrictions(true, InputUsageMask.All);
-            this._gauntletLayer.Input.RegisterHotKeyCategory(HotKeyManager.GetCategory("GenericPanelGameKeyCategory"));
-            this._gauntletLayer.LoadMovie("PEImportExport", this._dataSource);
-            if (base.MissionScreen != null)
-            {
-                base.MissionScreen.AddLayer(this._gauntletLayer);
-                ScreenManager.TrySetFocus(this._gauntletLayer);
-                this.IsActive = true;
-
-            }
-        }
-        protected void ExportItem(PEImportExportItemVM exportItemVM)
-        {
-            GameNetwork.BeginModuleEventAsClient();
-            GameNetwork.WriteMessage(new RequestExportItem(exportItemVM.Item, this.ActiveEntity));
-            GameNetwork.EndModuleEventAsClient();
-        }
-        protected void ImportItem(PEImportExportItemVM importItemVM)
-        {
-            GameNetwork.BeginModuleEventAsClient();
-            GameNetwork.WriteMessage(new RequestImportItem(importItemVM.Item, this.ActiveEntity));
-            GameNetwork.EndModuleEventAsClient();
-        }
-        protected override PEInventoryVM GetInventoryVM()
-        {
-            return this._dataSource.PlayerInventory;
         }
     }
 }

@@ -1,79 +1,71 @@
-﻿using System;
-using TaleWorlds.Library;
-using TaleWorlds.MountAndBlade;
+﻿using TaleWorlds.MountAndBlade;
+using TaleWorlds.MountAndBlade.Network.Messages;
+using PersistentEmpiresLib.Factions;
+using System.Linq;
 
-namespace PersistentEmpires.Views.ViewsVM.FactionManagement
+namespace PersistentEmpiresLib.NetworkMessages.Server
 {
-    public class PEFactionMemberItemVM : ViewModel
+    [DefineGameNetworkMessageTypeForMod(GameNetworkMessageSendType.FromServer)]
+    public sealed class AddMarshallIdToFaction : GameNetworkMessage
     {
-        private string _userName;
-        private NetworkCommunicator _peer;
-        private Action<PEFactionMemberItemVM> ExecuteOnSelection;
-        private bool _isSelected = false;
-        private bool _isGranted;
+        public string MarshallId;
+        public int FactionIndex;
 
-        public PEFactionMemberItemVM(NetworkCommunicator peer, Action<PEFactionMemberItemVM> ExecuteOnSelection)
+        public AddMarshallIdToFaction() { }
+
+        public AddMarshallIdToFaction(string marshallId, int factionIndex)
         {
-            this._userName = peer.UserName;
-            this._peer = peer;
-            this.ExecuteOnSelection = ExecuteOnSelection;
-            base.RefreshValues();
+            this.MarshallId = marshallId;
+            this.FactionIndex = factionIndex;
         }
-        public PEFactionMemberItemVM(NetworkCommunicator peer, bool isGranted, Action<PEFactionMemberItemVM> ExecuteOnSelection)
+
+        protected override MultiplayerMessageFilter OnGetLogFilter()
         {
-            this._userName = peer.UserName;
-            this._peer = peer;
-            this.ExecuteOnSelection = ExecuteOnSelection;
-            this.IsGranted = isGranted;
-            base.RefreshValues();
+            return MultiplayerMessageFilter.None;
         }
-        [DataSourceProperty]
-        public bool IsGranted
+
+        protected override string OnGetLogFormat()
         {
-            get => this._isGranted;
-            set
+            return "AddMarshallIdToFaction";
+        }
+
+        protected override bool OnRead()
+        {
+            bool result = true;
+            this.FactionIndex = GameNetworkMessage.ReadIntFromPacket(new CompressionInfo.Integer(-1, 200, true), ref result);
+            this.MarshallId = GameNetworkMessage.ReadStringFromPacket(ref result);
+            return result;
+        }
+
+        protected override void OnWrite()
+        {
+            GameNetworkMessage.WriteIntToPacket(this.FactionIndex, new CompressionInfo.Integer(-1, 200, true));
+            GameNetworkMessage.WriteStringToPacket(this.MarshallId);
+        }
+
+        public static bool CanAddMarshall(Faction faction)
+        {
+            if (faction.Rank < 2)
             {
-                if (value != this._isGranted)
-                {
-                    this._isGranted = value;
-                    base.OnPropertyChangedWithValue(value, "IsGranted");
-                }
+                return false; // Nur Fraktionen ab Rang 2 können Marschälle ernennen
             }
+
+            int maxMarshalls = faction.MaxMembers / 10; // Beispielregel: 1 Marschall pro 10 Mitglieder
+            return faction.marshalls.Count < maxMarshalls;
         }
-        public NetworkCommunicator Peer
+
+        public static void TryAddMarshall(Faction faction, string marshallId)
         {
-            get => this._peer;
-        }
-        [DataSourceProperty]
-        public string UserName
-        {
-            get => this._userName;
-            set
+            if (!CanAddMarshall(faction))
             {
-                if (value != this._userName)
-                {
-                    this._userName = value;
-                    base.OnPropertyChangedWithValue(value, "UserName");
-                }
+                InformationManager.DisplayMessage(new InformationMessage("Your faction rank is too low or you already have the maximum number of marshalls."));
+                return;
             }
-        }
 
-        public void OnSelection()
-        {
-            this.ExecuteOnSelection(this);
-        }
-
-        [DataSourceProperty]
-        public bool IsSelected
-        {
-            get => this._isSelected;
-            set
+            if (!faction.marshalls.Contains(marshallId))
             {
-                if (value != this._isSelected)
-                {
-                    this._isSelected = value;
-                    base.OnPropertyChangedWithValue(value, "IsSelected");
-                }
+                faction.marshalls.Add(marshallId);
+                InformationManager.DisplayMessage(new InformationMessage($"New Marshall added: {marshallId}"));
             }
         }
     }

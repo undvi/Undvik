@@ -52,9 +52,17 @@
 
 								<TextWidget WidthSizePolicy="Fixed" SuggestedWidth="20" HorizontalAlignment="Right"
 								  VerticalAlignment="Center" Brush="PE.Text.Danger" Text="I" />
-
 							</Children>
 						</ListPanel>
+
+						<!-- Lieferbutton für Handelsaufträge -->
+						<ButtonWidget Command.Click="DeliverTradeOrder" Parameter.TradeGood="@ItemName" WidthSizePolicy="Fixed"
+						  HeightSizePolicy="Fixed" SuggestedWidth="120" SuggestedHeight="40" HorizontalAlignment="Right"
+						  MarginLeft="20" IsVisible="@IsTradeOrder">
+							<Children>
+								<TextWidget Text="Liefern" Brush.FontSize="18" />
+							</Children>
+						</ButtonWidget>
 
 					</Children>
 				</ListPanel>
