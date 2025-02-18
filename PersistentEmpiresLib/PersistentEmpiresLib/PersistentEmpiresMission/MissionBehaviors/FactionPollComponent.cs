@@ -16,8 +16,14 @@ namespace PersistentEmpiresLib.PersistentEmpiresMission.MissionBehaviors
         private FactionsBehavior _factionsBehavior;
         private Dictionary<int, FactionPoll> _ongoingPolls;
 
-        private int LordPollRequiredGold = 1000; // Standardwert (kann konfigurierbar sein)
-        private int LordPollTimeOut = 60; // Sekunden für den Poll-Cooldown
+        private int LordPollRequiredGold = 1000;
+        private int LordPollTimeOut = 60;
+        private int TaxCollectionInterval = 300; // Alle 5 Minuten Steuern sammeln
+        private Dictionary<int, float> FactionTaxes = new Dictionary<int, float>(); // Steuersätze pro Fraktion
+        private Dictionary<int, int> FactionRanks = new Dictionary<int, int>(); // Fraktionsränge basierend auf Mitgliedszahlen
+        private Dictionary<int, List<string>> FactionExportOrders = new Dictionary<int, List<string>>(); // Export-Aufträge
+        private Dictionary<int, string> FactionRegionBonuses = new Dictionary<int, string>(); // Gebietsboni
+        private Dictionary<int, int> FactionVassals = new Dictionary<int, int>(); // Vasallenbeziehungen
 
         public override void OnBehaviorInitialize()
         {
@@ -34,12 +40,6 @@ namespace PersistentEmpiresLib.PersistentEmpiresMission.MissionBehaviors
             }
         }
 
-        public override void OnRemoveBehavior()
-        {
-            base.OnRemoveBehavior();
-            this.AddRemoveMessageHandlers(GameNetwork.NetworkMessageHandlerRegisterer.RegisterMode.Remove);
-        }
-
         public override void OnMissionTick(float dt)
         {
             base.OnMissionTick(dt);
@@ -54,143 +54,67 @@ namespace PersistentEmpiresLib.PersistentEmpiresMission.MissionBehaviors
             }
         }
 
-        public void OpenLordPollServer(NetworkCommunicator pollCreatorPeer, NetworkCommunicator targetPeer)
+        public void SetFactionTax(int factionIndex, float taxRate)
         {
-            if (pollCreatorPeer == null || targetPeer == null)
-            {
-                return;
-            }
-
-            if (!pollCreatorPeer.IsConnectionActive || !targetPeer.IsConnectionActive)
-            {
-                this._informationComponent.SendAnnouncementToPlayer("Target player not found", pollCreatorPeer);
-                return;
-            }
-
-            PersistentEmpireRepresentative creatorRep = pollCreatorPeer.GetComponent<PersistentEmpireRepresentative>();
-            PersistentEmpireRepresentative targetRep = targetPeer.GetComponent<PersistentEmpireRepresentative>();
-
-            if (creatorRep == null || targetRep == null || creatorRep.GetFaction() == null || targetRep.GetFaction() == null)
-            {
-                return;
-            }
-
-            Faction faction = targetRep.GetFaction();
-            int factionIndex = targetRep.GetFactionIndex();
-
-            if (creatorRep.GetFactionIndex() != factionIndex)
-            {
-                this._informationComponent.SendAnnouncementToPlayer("Your candidate is not in the same faction as you", pollCreatorPeer);
-                return;
-            }
-
-            if (this._ongoingPolls.ContainsKey(factionIndex) && this._ongoingPolls[factionIndex].IsOpen)
-            {
-                this._informationComponent.SendAnnouncementToPlayer("There is already an ongoing poll", pollCreatorPeer);
-                return;
-            }
-
-            if (!creatorRep.ReduceIfHaveEnoughGold(LordPollRequiredGold))
-            {
-                this._informationComponent.SendMessage($"You need {LordPollRequiredGold} dinars to start a poll", 0xFF0000FF, pollCreatorPeer);
-                return;
-            }
-
-            // Lord-Wahl starten
-            this.StartLordPoll(targetPeer, pollCreatorPeer);
+            if (taxRate < 0f || taxRate > 0.3f) return;
+            FactionTaxes[factionIndex] = taxRate;
         }
 
-        private void StartLordPoll(NetworkCommunicator targetPeer, NetworkCommunicator pollCreatorPeer)
+        public void CollectFactionTaxes()
         {
-            PersistentEmpireRepresentative targetRep = targetPeer.GetComponent<PersistentEmpireRepresentative>();
-
-            this._ongoingPolls[targetRep.GetFactionIndex()] = new FactionPoll(
-                FactionPoll.Type.Lord,
-                targetRep.GetFactionIndex(),
-                targetRep.GetFaction(),
-                targetPeer
-            );
-
-            foreach (NetworkCommunicator player in this._ongoingPolls[targetRep.GetFactionIndex()].ParticipantsToVote)
+            foreach (var faction in _factionsBehavior.GetAllFactions())
             {
-                GameNetwork.BeginModuleEventAsServer(player);
-                GameNetwork.WriteMessage(new FactionLordPollOpened(pollCreatorPeer, targetPeer));
-                GameNetwork.EndModuleEventAsServer();
-            }
-        }
-
-        public void Vote(bool accepted)
-        {
-            if (GameNetwork.IsServer)
-            {
-                if (GameNetwork.MyPeer != null)
+                if (FactionTaxes.ContainsKey(faction.FactionIndex))
                 {
-                    this.ApplyVote(GameNetwork.MyPeer, accepted);
-                    return;
+                    float taxRate = FactionTaxes[faction.FactionIndex];
+                    foreach (var member in faction.Members)
+                    {
+                        member.ReduceGold(member.Gold * taxRate);
+                        faction.AddGold(member.Gold * taxRate);
+                    }
                 }
             }
-            else
+        }
+
+        public void GenerateFactionExportOrders()
+        {
+            foreach (var faction in _factionsBehavior.GetAllFactions())
             {
-                GameNetwork.BeginModuleEventAsClient();
-                GameNetwork.WriteMessage(new FactionPollResponse(accepted));
-                GameNetwork.EndModuleEventAsClient();
+                if (!FactionExportOrders.ContainsKey(faction.FactionIndex))
+                {
+                    FactionExportOrders[faction.FactionIndex] = new List<string>();
+                }
+                FactionExportOrders[faction.FactionIndex].Add("Export Holz nach Stadt X");
+                FactionExportOrders[faction.FactionIndex].Add("Lieferung von Erz an Schmiede");
             }
         }
 
-        private void ApplyVote(NetworkCommunicator peer, bool accepted)
+        public void AssignFactionRegionBonus(int factionIndex, string bonus)
         {
-            PersistentEmpireRepresentative rep = peer.GetComponent<PersistentEmpireRepresentative>();
-            if (!_ongoingPolls.ContainsKey(rep.GetFactionIndex())) return;
-
-            FactionPoll poll = _ongoingPolls[rep.GetFactionIndex()];
-            if (!poll.ApplyVote(peer, accepted)) return;
-
-            foreach (NetworkCommunicator player in poll.GetPollProgressReceivers())
+            if (!FactionRegionBonuses.ContainsKey(factionIndex))
             {
-                GameNetwork.BeginModuleEventAsServer(player);
-                GameNetwork.WriteMessage(new FactionPollProgress(poll.AcceptedCount, poll.RejectedCount));
-                GameNetwork.EndModuleEventAsServer();
-            }
-
-            this.UpdatePollProgress(poll.AcceptedCount, poll.RejectedCount);
-        }
-
-        private void UpdatePollProgress(int accepted, int rejected)
-        {
-            this.OnPollUpdate?.Invoke(accepted, rejected);
-        }
-
-        public void OnLordPollClosedOnServer(FactionPoll poll)
-        {
-            bool accepted = poll.GotEnoughAcceptVotesToEnd();
-            if (poll.GotEnoughRejectVotesToEnd() || !poll.TargetPlayer.IsConnectionActive)
-            {
-                accepted = false;
-            }
-
-            GameNetwork.BeginBroadcastModuleEvent();
-            GameNetwork.WriteMessage(new FactionLordPollClosed(poll.TargetPlayer, accepted, poll.FactionIndex));
-            GameNetwork.EndBroadcastModuleEvent(GameNetwork.EventBroadcastFlags.None, null);
-
-            poll.Close();
-            this.CloseLordPoll(accepted, poll.TargetPlayer, poll.FactionIndex);
-
-            if (accepted)
-            {
-                Faction faction = poll.TargetPlayer.GetComponent<PersistentEmpireRepresentative>().GetFaction();
-                faction.pollUnlockedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds() + (10 * 60);
-                this._factionsBehavior.SetFactionLord(poll.TargetPlayer, poll.FactionIndex);
+                FactionRegionBonuses[factionIndex] = bonus;
             }
         }
 
-        private void CloseLordPoll(bool accepted, NetworkCommunicator targetPeer, int factionIndex)
+        public void SetFactionVassal(int overlordFaction, int vassalFaction)
         {
-            if (this._ongoingPolls.ContainsKey(factionIndex))
+            if (!FactionVassals.ContainsKey(vassalFaction))
             {
-                this._ongoingPolls[factionIndex].Close();
-                this._ongoingPolls.Remove(factionIndex);
+                FactionVassals[vassalFaction] = overlordFaction;
             }
-            this.OnPollClosed?.Invoke(accepted, targetPeer);
+        }
+
+        public void UpgradeFactionRank(int factionIndex)
+        {
+            if (!FactionRanks.ContainsKey(factionIndex))
+            {
+                FactionRanks[factionIndex] = 1;
+            }
+            else if (FactionRanks[factionIndex] < 5)
+            {
+                FactionRanks[factionIndex]++;
+            }
         }
     }
 }

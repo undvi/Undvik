@@ -2,6 +2,7 @@
 using TaleWorlds.MountAndBlade.Network.Messages;
 using PersistentEmpiresLib.Factions;
 using TaleWorlds.Core;
+using TaleWorlds.Library;
 
 namespace PersistentEmpiresLib.NetworkMessages.Server
 {
@@ -11,6 +12,8 @@ namespace PersistentEmpiresLib.NetworkMessages.Server
         public int FactionIndex { get; private set; }
         public NetworkCommunicator TargetPlayer { get; private set; }
         public bool IsMarshall { get; private set; }
+
+        private const int InfluenceCost = 100; // Einflusskosten für die Ernennung zum Marschall
 
         public FactionUpdateMarshall() { }
 
@@ -28,7 +31,7 @@ namespace PersistentEmpiresLib.NetworkMessages.Server
 
         protected override string OnGetLogFormat()
         {
-            return $"Faction {FactionIndex}: {TargetPlayer.UserName} is now a Marshall: {IsMarshall}";
+            return $"⚔️ Fraktion {FactionIndex}: {TargetPlayer.UserName} ist nun ein Marschall: {IsMarshall}";
         }
 
         protected override bool OnRead()
@@ -47,12 +50,35 @@ namespace PersistentEmpiresLib.NetworkMessages.Server
             GameNetworkMessage.WriteBoolToPacket(this.IsMarshall);
         }
 
-        public static void BroadcastMarshallUpdate(int factionIndex, NetworkCommunicator targetPlayer, bool isMarshall)
+        public static void BroadcastMarshallUpdate(NetworkCommunicator requester, int factionIndex, NetworkCommunicator targetPlayer, bool isMarshall)
         {
             Faction faction = FactionManager.GetFactionByIndex(factionIndex);
             if (faction == null)
             {
-                InformationManager.DisplayMessage(new InformationMessage($"Faction {factionIndex} not found, unable to update Marshall status."));
+                InformationManager.DisplayMessage(new InformationMessage($"⚠️ Fraktion {factionIndex} nicht gefunden. Aktion abgebrochen."));
+                return;
+            }
+
+            PersistentEmpireRepresentative requesterRep = requester.GetComponent<PersistentEmpireRepresentative>();
+            PersistentEmpireRepresentative targetRep = targetPlayer.GetComponent<PersistentEmpireRepresentative>();
+
+            if (requesterRep == null || targetRep == null)
+            {
+                InformationManager.DisplayMessage(new InformationMessage("⚠️ Fehler: Spielerreferenz ist null."));
+                return;
+            }
+
+            // 🔹 Nur der Lord oder ein hoher Marschall darf neue Marschalls ernennen
+            if (faction.lordId != requester.VirtualPlayer.ToPlayerId() && !faction.marshalls.Contains(requester.VirtualPlayer.ToPlayerId()))
+            {
+                InformationManager.DisplayMessage(new InformationMessage($"❌ {requester.UserName} hat keine Berechtigung, Marschälle zu ernennen oder zu entfernen."));
+                return;
+            }
+
+            // 🔹 Ernennung zum Marschall kostet Einfluss
+            if (isMarshall && !requesterRep.ReduceIfHaveEnoughInfluence(InfluenceCost))
+            {
+                InformationManager.DisplayMessage(new InformationMessage($"❌ Nicht genug Einfluss! {InfluenceCost} Einfluss erforderlich."));
                 return;
             }
 
@@ -72,8 +98,17 @@ namespace PersistentEmpiresLib.NetworkMessages.Server
             GameNetwork.WriteMessage(new FactionUpdateMarshall(factionIndex, targetPlayer, isMarshall));
             GameNetwork.EndBroadcastModuleEvent();
 
-            string statusMessage = isMarshall ? "promoted to Marshall" : "demoted from Marshall";
-            InformationManager.DisplayMessage(new InformationMessage($"{targetPlayer.UserName} has been {statusMessage} in faction {faction.name}."));
+            string statusMessage = isMarshall ? "zum Marschall befördert" : "vom Marschall-Rang entfernt";
+            InformationManager.DisplayMessage(new InformationMessage($"📢 {targetPlayer.UserName} wurde {statusMessage} in der Fraktion {faction.name}."));
+
+            // 🔹 Fraktionsmitglieder informieren
+            foreach (var member in faction.members)
+            {
+                InformationManager.DisplayMessage(new InformationMessage($"📢 {targetPlayer.UserName} ist jetzt {statusMessage}."));
+            }
+
+            // 🔹 Log für die Fraktion
+            faction.AddToFactionLog($"📜 {targetPlayer.UserName} wurde {statusMessage} von {requester.UserName}.");
         }
     }
 }

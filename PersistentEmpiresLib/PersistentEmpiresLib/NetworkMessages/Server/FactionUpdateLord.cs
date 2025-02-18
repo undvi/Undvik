@@ -2,6 +2,7 @@
 using TaleWorlds.MountAndBlade.Network.Messages;
 using PersistentEmpiresLib.Factions;
 using TaleWorlds.Core;
+using TaleWorlds.Library;
 
 namespace PersistentEmpiresLib.NetworkMessages.Server
 {
@@ -10,6 +11,8 @@ namespace PersistentEmpiresLib.NetworkMessages.Server
     {
         public int FactionIndex { get; private set; }
         public NetworkCommunicator Player { get; private set; }
+
+        private const int InfluenceCost = 500; // Einflusskosten für die Ernennung eines neuen Lords
 
         public FactionUpdateLord() { }
 
@@ -26,7 +29,7 @@ namespace PersistentEmpiresLib.NetworkMessages.Server
 
         protected override string OnGetLogFormat()
         {
-            return $"Faction {FactionIndex} has a new lord: {Player.VirtualPlayer.Id}";
+            return $"⚔️ Fraktion {FactionIndex} hat einen neuen Lord: {Player.UserName}";
         }
 
         protected override bool OnRead()
@@ -43,23 +46,55 @@ namespace PersistentEmpiresLib.NetworkMessages.Server
             GameNetworkMessage.WriteNetworkPeerReferenceToPacket(this.Player);
         }
 
-        public static void BroadcastNewLord(int factionIndex, NetworkCommunicator newLord)
+        public static void BroadcastNewLord(NetworkCommunicator requester, int factionIndex, NetworkCommunicator newLord)
         {
             Faction faction = FactionManager.GetFactionByIndex(factionIndex);
             if (faction == null)
             {
-                InformationManager.DisplayMessage(new InformationMessage($"Faction {factionIndex} not found, unable to update lord."));
+                InformationManager.DisplayMessage(new InformationMessage($"⚠️ Fraktion {factionIndex} nicht gefunden. Aktion abgebrochen."));
                 return;
             }
 
+            PersistentEmpireRepresentative requesterRep = requester.GetComponent<PersistentEmpireRepresentative>();
+            PersistentEmpireRepresentative newLordRep = newLord.GetComponent<PersistentEmpireRepresentative>();
+
+            if (requesterRep == null || newLordRep == null)
+            {
+                InformationManager.DisplayMessage(new InformationMessage("⚠️ Fehler: Spielerreferenz ist null."));
+                return;
+            }
+
+            // 🔹 Nur der aktuelle Lord oder ein Marschall mit Einfluss kann einen neuen Lord ernennen
+            if (faction.lordId != requester.VirtualPlayer.ToPlayerId() && !faction.marshalls.Contains(requester.VirtualPlayer.ToPlayerId()))
+            {
+                InformationManager.DisplayMessage(new InformationMessage($"❌ {requester.UserName} hat keine Berechtigung, einen neuen Lord zu ernennen."));
+                return;
+            }
+
+            // 🔹 Ernennung zum Lord kostet Einfluss
+            if (!requesterRep.ReduceIfHaveEnoughInfluence(InfluenceCost))
+            {
+                InformationManager.DisplayMessage(new InformationMessage($"❌ Nicht genug Einfluss! {InfluenceCost} Einfluss erforderlich."));
+                return;
+            }
+
+            // 🔹 Neuen Lord setzen
             faction.lordId = newLord.VirtualPlayer.ToPlayerId();
 
             GameNetwork.BeginBroadcastModuleEvent();
             GameNetwork.WriteMessage(new FactionUpdateLord(factionIndex, newLord));
             GameNetwork.EndBroadcastModuleEvent();
 
-            InformationManager.DisplayMessage(new InformationMessage($"New lord for faction {faction.name}: {newLord.UserName}"));
+            InformationManager.DisplayMessage(new InformationMessage($"👑 {newLord.UserName} wurde zum neuen Lord der Fraktion {faction.name} ernannt."));
+
+            // 🔹 Fraktionsmitglieder informieren
+            foreach (var member in faction.members)
+            {
+                InformationManager.DisplayMessage(new InformationMessage($"📢 {newLord.UserName} ist nun der neue Lord eurer Fraktion!"));
+            }
+
+            // 🔹 Log für die Fraktion
+            faction.AddToFactionLog($"📜 {newLord.UserName} wurde von {requester.UserName} zum neuen Lord ernannt.");
         }
     }
 }
-
