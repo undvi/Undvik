@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using TaleWorlds.Core;
 using TaleWorlds.MountAndBlade;
 using TaleWorlds.MountAndBlade.Network.Messages;
@@ -24,7 +25,6 @@ namespace PersistentEmpiresLib.NetworkMessages.Server.GlobalSync
         public ServerHandshake() { }
 
         protected override MultiplayerMessageFilter OnGetLogFilter() => MultiplayerMessageFilter.None;
-
         protected override string OnGetLogFormat() => "ServerHandshake";
 
         protected override bool OnRead()
@@ -33,7 +33,6 @@ namespace PersistentEmpiresLib.NetworkMessages.Server.GlobalSync
             ServerSignature = GameNetworkMessage.ReadStringFromPacket(ref result);
             return result;
         }
-
         protected override void OnWrite()
         {
             GameNetworkMessage.WriteStringToPacket(ServerSignature);
@@ -97,27 +96,49 @@ namespace PersistentEmpiresLib.NetworkMessages.Server.GlobalSync
     }
     #endregion
 
-    #region New User Synchronization
+    #region Global Game State Synchronization
+    /// <summary>
+    /// Neue Nachricht, die globale Zustände an einen neuen Client sendet:
+    /// - Alle Fraktionen (wie bisher)
+    /// - Castle-Banner (wie bisher)
+    /// - Zusätzlich: GlobalResearchData (Forschung) und ActiveWars (Kriegssystem)
+    /// </summary>
     [DefineGameNetworkMessageTypeForMod(GameNetworkMessageSendType.FromServer)]
     public sealed class SyncNewUser : GameNetworkMessage
     {
         public Dictionary<int, Faction> Factions { get; set; }
         public List<PE_CastleBanner> CastleBanners { get; set; }
 
+        // NEU: Global Research Data (z. B. Projekt-ID -> Fortschritt in Prozent)
+        public Dictionary<string, float> GlobalResearchData { get; set; }
+
+        // NEU: Liste aktiver Kriege
+        public List<WarInfo> ActiveWars { get; set; }
+
         public SyncNewUser() { }
-        public SyncNewUser(Dictionary<int, Faction> factions, List<PE_CastleBanner> castleBanners)
+
+        public SyncNewUser(
+            Dictionary<int, Faction> factions,
+            List<PE_CastleBanner> castleBanners,
+            Dictionary<string, float> globalResearchData,
+            List<WarInfo> activeWars)
         {
             Factions = factions;
             CastleBanners = castleBanners;
+            GlobalResearchData = globalResearchData;
+            ActiveWars = activeWars;
         }
 
         protected override MultiplayerMessageFilter OnGetLogFilter() => MultiplayerMessageFilter.Mission;
-        protected override string OnGetLogFormat() => "Sending all data to client";
+        protected override string OnGetLogFormat() => "Sending full global game state to client";
 
         protected override bool OnRead()
         {
             Factions = new Dictionary<int, Faction>();
             CastleBanners = new List<PE_CastleBanner>();
+            GlobalResearchData = new Dictionary<string, float>();
+            ActiveWars = new List<WarInfo>();
+
             bool result = true;
 
             int factionLength = GameNetworkMessage.ReadIntFromPacket(new CompressionInfo.Integer(0, 201, true), ref result);
@@ -144,16 +165,30 @@ namespace PersistentEmpiresLib.NetworkMessages.Server.GlobalSync
                         faction.members.Add(member);
                 }
 
-                int warDeclerationLength = GameNetworkMessage.ReadIntFromPacket(new CompressionInfo.Integer(0, 200, true), ref result);
-                for (int j = 0; j < warDeclerationLength; j++)
-                {
-                    faction.warDeclaredTo.Add(GameNetworkMessage.ReadIntFromPacket(new CompressionInfo.Integer(0, 200, true), ref result));
-                }
-
+                // Optional: Lese zusätzliche Daten wie Prestige, etc.
                 Factions[factionIndex] = faction;
             }
 
-            // Castle-Banner-Abschnitt ist derzeit auskommentiert
+            // NEU: GlobalResearchData
+            int researchCount = GameNetworkMessage.ReadIntFromPacket(new CompressionInfo.Integer(0, 100, true), ref result);
+            for (int i = 0; i < researchCount; i++)
+            {
+                string researchId = GameNetworkMessage.ReadStringFromPacket(ref result);
+                float progress = GameNetworkMessage.ReadFloatFromPacket(new CompressionInfo.Float(0f, 100f, 0.1f), ref result);
+                GlobalResearchData[researchId] = progress;
+            }
+
+            // NEU: ActiveWars
+            int warCount = GameNetworkMessage.ReadIntFromPacket(new CompressionInfo.Integer(0, 100, true), ref result);
+            for (int i = 0; i < warCount; i++)
+            {
+                WarInfo war = new WarInfo();
+                war.WarDeclarerIndex = GameNetworkMessage.ReadIntFromPacket(new CompressionInfo.Integer(0, 200, true), ref result);
+                war.WarDeclaredTo = GameNetworkMessage.ReadIntFromPacket(new CompressionInfo.Integer(0, 200, true), ref result);
+                war.WarType = GameNetworkMessage.ReadIntFromPacket(new CompressionInfo.Integer(0, 10, true), ref result);
+                ActiveWars.Add(war);
+            }
+
             return result;
         }
 
@@ -175,14 +210,36 @@ namespace PersistentEmpiresLib.NetworkMessages.Server.GlobalSync
                 {
                     GameNetworkMessage.WriteNetworkPeerReferenceToPacket(faction.members[j]);
                 }
-                int warDeclerationLength = faction.warDeclaredTo.Count;
-                GameNetworkMessage.WriteIntToPacket(warDeclerationLength, new CompressionInfo.Integer(0, 200, true));
-                for (int j = 0; j < warDeclerationLength; j++)
-                {
-                    GameNetworkMessage.WriteIntToPacket(faction.warDeclaredTo[j], new CompressionInfo.Integer(0, 200, true));
-                }
+            }
+
+            // NEU: GlobalResearchData schreiben
+            GameNetworkMessage.WriteIntToPacket(GlobalResearchData.Count, new CompressionInfo.Integer(0, 100, true));
+            foreach (var kvp in GlobalResearchData)
+            {
+                GameNetworkMessage.WriteStringToPacket(kvp.Key);
+                GameNetworkMessage.WriteFloatToPacket(kvp.Value, new CompressionInfo.Float(0f, 100f, 0.1f));
+            }
+
+            // NEU: ActiveWars schreiben
+            GameNetworkMessage.WriteIntToPacket(ActiveWars.Count, new CompressionInfo.Integer(0, 100, true));
+            foreach (var war in ActiveWars)
+            {
+                GameNetworkMessage.WriteIntToPacket(war.WarDeclarerIndex, new CompressionInfo.Integer(0, 200, true));
+                GameNetworkMessage.WriteIntToPacket(war.WarDeclaredTo, new CompressionInfo.Integer(0, 200, true));
+                GameNetworkMessage.WriteIntToPacket(war.WarType, new CompressionInfo.Integer(0, 10, true));
             }
         }
+    }
+
+    /// <summary>
+    /// Neue Klasse zur Darstellung eines aktiven Krieges.
+    /// WarType: 0 = Handelskrieg, 1 = Überfall, 2 = Eroberung.
+    /// </summary>
+    public class WarInfo
+    {
+        public int WarDeclarerIndex { get; set; }
+        public int WarDeclaredTo { get; set; }
+        public int WarType { get; set; }
     }
     #endregion
 }

@@ -14,12 +14,10 @@ namespace PersistentEmpiresClient.ViewsVM
 
         public PEAcademyVM()
         {
-            // Initialisierung der Eigenschaften
             PlayerInfluence = 0;
             AvailableBlueprints = new MBBindingList<BlueprintItemVM>();
             ActiveResearch = new MBBindingList<BlueprintResearchVM>();
 
-            // Registrierung der Event-Handler (timerbasierte Logik wurde entfernt)
             GameNetwork.MessageHandlerManager.RegisterHandler<PEInfluenceUpdated>(OnInfluenceUpdated);
             GameNetwork.MessageHandlerManager.RegisterHandler<PEAcademyBlueprintsUpdated>(OnBlueprintsUpdated);
             LoadActiveResearch();
@@ -100,10 +98,6 @@ namespace PersistentEmpiresClient.ViewsVM
             LoadActiveResearch();
         }
 
-        /// <summary>
-        /// Lädt die aktuell aktiven Forschungsprojekte.
-        /// Die zugrundeliegende Logik basiert nun ausschließlich auf der Anzahl hergestellter Items.
-        /// </summary>
         private void LoadActiveResearch()
         {
             var researchList = BlueprintResearchSystem.GetActiveResearch();

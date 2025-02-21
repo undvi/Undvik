@@ -2,6 +2,8 @@
 using TaleWorlds.MountAndBlade.Network.Messages;
 using PersistentEmpiresLib.Data;
 using PersistentEmpiresLib.Helpers;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace PersistentEmpiresLib.NetworkMessages.Server
 {
@@ -54,6 +56,7 @@ namespace PersistentEmpiresLib.NetworkMessages.Server
                 GameNetwork.EndModuleEventAsServer();
                 return false;
             }
+            PlayerProgressManager.Instance.UpdateCraftingProgress(PlayerID, ItemID);
             return true;
         }
     }
@@ -94,6 +97,52 @@ namespace PersistentEmpiresLib.NetworkMessages.Server
         {
             GameNetworkMessage.WriteIntToPacket(this.PlayerID, new CompressionInfo.Integer(0, 10000, true));
             GameNetworkMessage.WriteStringToPacket(this.ItemID);
+        }
+
+        private string GetBlueprintForItem(string itemId)
+        {
+            return "blueprint_" + itemId;
+        }
+    }
+}
+
+// File: PlayerProgressManager.cs
+using System.Collections.Generic;
+using System.Linq;
+using TaleWorlds.MountAndBlade;
+
+namespace PersistentEmpiresLib.Managers
+{
+    public class PlayerProgressManager
+    {
+        private Dictionary<int, List<string>> _craftedItems = new Dictionary<int, List<string>>();
+
+        public static PlayerProgressManager Instance { get; } = new PlayerProgressManager();
+
+        public void UpdateCraftingProgress(int playerId, string itemId)
+        {
+            if (!_craftedItems.ContainsKey(playerId))
+            {
+                _craftedItems[playerId] = new List<string>();
+            }
+
+            _craftedItems[playerId].Add(itemId);
+            CheckBlueprintUnlock(playerId);
+        }
+
+        private void CheckBlueprintUnlock(int playerId)
+        {
+            if (_craftedItems[playerId].Count(i => i == "Sword") >= 5)
+            {
+                UnlockBlueprint(playerId, "Advanced Sword");
+            }
+        }
+
+        private void UnlockBlueprint(int playerId, string blueprint)
+        {
+            GameNetwork.BeginModuleEventAsServer(playerId);
+            GameNetwork.WriteMessage(new PEAcademyBlueprintUnlocked(blueprint));
+            GameNetwork.EndModuleEventAsServer();
         }
     }
 }
