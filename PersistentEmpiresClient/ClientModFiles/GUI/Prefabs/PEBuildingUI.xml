@@ -21,7 +21,8 @@
 									<TextWidget WidthSizePolicy="StretchToParent" Text="📋 Bauinfo: {SelectedBuilding.BuildingName}" Brush.FontSize="18"/>
 									<TextWidget WidthSizePolicy="StretchToParent" Text="💰 Kosten: {SelectedBuilding.GoldCost} Gold | 🏛️ {SelectedBuilding.InfluenceCost} Einfluss" Brush.FontSize="16"/>
 									<TextWidget WidthSizePolicy="StretchToParent" Text="⏳ Bauzeit: {SelectedBuilding.BuildTime} Sekunden" Brush.FontSize="16"/>
-									<TextWidget WidthSizePolicy="StretchToParent" Text="🔨 Ressourcen: Holz {SelectedBuilding.RequiredWood}, Stein {SelectedBuilding.RequiredStone}, Eisen {SelectedBuilding.RequiredIron}" Brush.FontSize="16"/>
+									<TextWidget WidthSizePolicy="StretchToParent" Text="🔨 Erforderliches Werkzeug: {SelectedBuilding.RequiredTool}" Brush.FontSize="16"/>
+									<TextWidget WidthSizePolicy="StretchToParent" Text="🔧 Wartungskosten: Gold {SelectedBuilding.MaintenanceCost.Gold}, Holz {SelectedBuilding.MaintenanceCost.Wood}" Brush.FontSize="16"/>
 								</ListPanel>
 
 								<!-- Auswahl Bauzone -->

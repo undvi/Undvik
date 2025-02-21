@@ -53,6 +53,12 @@ namespace PersistentEmpiresLib.SceneScripts
             GameEntity nextTier = GetNextUpgrade();
             if (nextTier == null) return;
 
+            if (!_playerInventoryComponent.HasItem("UpgradeHammer"))
+            {
+                InformationManager.DisplayMessage(new InformationMessage("⚠️ Fehler: Upgrade-Werkzeug fehlt!"));
+                return;
+            }
+
             _currentTierState.SetVisibilityExcludeParents(false);
             _currentTierState = nextTier;
             _currentTierState.SetVisibilityExcludeParents(true);
@@ -79,6 +85,18 @@ namespace PersistentEmpiresLib.SceneScripts
             {
                 _upgradeInventory.AddItem(receipt.UpgradeItem, receipt.NeededCount / 2);
             }
+        }
+
+        public void ApplyBuildingMaintenance()
+        {
+            if (!_playerInventoryComponent.HasResources(new Dictionary<string, int> { { "Gold", 5 }, { "Wood", 3 } }))
+            {
+                InformationManager.DisplayMessage(new InformationMessage("⚠️ Fehler: Nicht genug Ressourcen für Wartung!"));
+                return;
+            }
+
+            _playerInventoryComponent.RemoveResources(new Dictionary<string, int> { { "Gold", 5 }, { "Wood", 3 } });
+            InformationManager.DisplayMessage(new InformationMessage("🔧 Wartung abgeschlossen!"));
         }
 
         private GameEntity GetNextUpgrade() => CurrentTier switch

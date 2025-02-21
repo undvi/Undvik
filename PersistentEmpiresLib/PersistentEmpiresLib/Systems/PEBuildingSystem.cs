@@ -26,10 +26,10 @@ namespace PersistentEmpiresLib.Systems
 
         private void LoadAvailableBuildings()
         {
-            AvailableBuildings["MarketStall"] = new BuildingData("Market Stall", 200, 50, false, 1, new Dictionary<string, int> { { "Hardwood", 10 }, { "Stone", 5 } });
-            AvailableBuildings["Warehouse"] = new BuildingData("Warehouse", 500, 100, false, 1, new Dictionary<string, int> { { "Hardwood", 20 }, { "Stone", 15 }, { "Bretter", 10 } });
-            AvailableBuildings["FactionHall"] = new BuildingData("Faction Hall", 1000, 200, true, 2, new Dictionary<string, int> { { "Hardwood", 50 }, { "Stone", 50 }, { "Bretter", 30 }, { "Lehm", 20 }, { "Eisenbarren", 5 } });
-            AvailableBuildings["Blacksmith"] = new BuildingData("Blacksmith", 800, 150, false, 2, new Dictionary<string, int> { { "Hardwood", 30 }, { "Stone", 30 }, { "Eisenbarren", 10 } });
+            AvailableBuildings["MarketStall"] = new BuildingData("Market Stall", 200, 50, false, 1, new Dictionary<string, int> { { "Hardwood", 10 }, { "Stone", 5 } }, "BuildHammer");
+            AvailableBuildings["Warehouse"] = new BuildingData("Warehouse", 500, 100, false, 1, new Dictionary<string, int> { { "Hardwood", 20 }, { "Stone", 15 }, { "Bretter", 10 } }, "BuildHammer");
+            AvailableBuildings["FactionHall"] = new BuildingData("Faction Hall", 1000, 200, true, 2, new Dictionary<string, int> { { "Hardwood", 50 }, { "Stone", 50 }, { "Bretter", 30 }, { "Lehm", 20 }, { "Eisenbarren", 5 } }, "AdvancedHammer");
+            AvailableBuildings["Blacksmith"] = new BuildingData("Blacksmith", 800, 150, false, 2, new Dictionary<string, int> { { "Hardwood", 30 }, { "Stone", 30 }, { "Eisenbarren", 10 } }, "AdvancedHammer");
         }
 
         private void LoadNeutralZones()
@@ -52,6 +52,12 @@ namespace PersistentEmpiresLib.Systems
                 return;
             }
 
+            if (!playerInventory.HasItem(buildingData.RequiredTool))
+            {
+                InformationManager.DisplayMessage(new InformationMessage("⚠️ Fehler: Bauwerkzeug fehlt!"));
+                return;
+            }
+
             foreach (var material in buildingData.MaterialCost)
             {
                 if (!playerInventory.HasResource(material.Key, material.Value))
@@ -66,9 +72,58 @@ namespace PersistentEmpiresLib.Systems
                 playerInventory.RemoveResource(material.Key, material.Value);
             }
             playerInventory.RemoveGold(buildingData.GoldCost);
+            playerInventory.RemoveItem(buildingData.RequiredTool);
 
             zone.IsOccupied = true;
             InformationManager.DisplayMessage(new InformationMessage($"✅ {player.UserName} hat {buildingData.Name} gebaut!"));
+        }
+
+        public void ApplyBuildingMaintenance()
+        {
+            foreach (var faction in FactionBuildings)
+            {
+                foreach (var zone in faction.Value)
+                {
+                    if (!AvailableBuildings.TryGetValue(zone.OccupiedBuilding, out var buildingData))
+                        continue;
+
+                    var factionOwner = PEFactionManager.GetFactionByName(faction.Key);
+                    if (factionOwner == null)
+                        continue;
+
+                    if (!factionOwner.HasResources(buildingData.MaintenanceCost))
+                    {
+                        InformationManager.DisplayMessage(new InformationMessage($"⚠️ {zone.OccupiedBuilding} benötigt Wartung, aber die Fraktion hat nicht genug Ressourcen!"));
+                        continue;
+                    }
+
+                    factionOwner.RemoveResources(buildingData.MaintenanceCost);
+                }
+            }
+        }
+    }
+
+    public class BuildingData
+    {
+        public string Name { get; }
+        public int GoldCost { get; }
+        public int InfluenceCost { get; }
+        public bool IsFactionOnly { get; }
+        public int Tier { get; }
+        public Dictionary<string, int> MaterialCost { get; }
+        public string RequiredTool { get; }
+        public Dictionary<string, int> MaintenanceCost { get; }
+
+        public BuildingData(string name, int goldCost, int influenceCost, bool isFactionOnly, int tier, Dictionary<string, int> materialCost, string requiredTool)
+        {
+            Name = name;
+            GoldCost = goldCost;
+            InfluenceCost = influenceCost;
+            IsFactionOnly = isFactionOnly;
+            Tier = tier;
+            MaterialCost = materialCost;
+            RequiredTool = requiredTool;
+            MaintenanceCost = new Dictionary<string, int> { { "Gold", 10 }, { "Wood", 5 } };
         }
     }
 }

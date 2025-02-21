@@ -1,4 +1,5 @@
-﻿using System;
+﻿// File: DBUpgradeableBuilding.cs
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -33,6 +34,15 @@ namespace PersistentEmpiresLib.Database.DBEntities
         public int RequiredIron { get; set; }
 
         [Required]
+        public string RequiredTool { get; set; }
+
+        [Required]
         public int FactionIndex { get; set; }
+
+        [Required]
+        public int MaintenanceGold { get; set; }
+
+        [Required]
+        public int MaintenanceWood { get; set; }
     }
 }
