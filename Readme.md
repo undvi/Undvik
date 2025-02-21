@@ -1,159 +1,154 @@
+Roadmap: Forschung, Crafting, Fraktionen, Kriegssystem, NPCs, Handel, Bau, Schmieden und Tier-System
+
 1. Forschung & Blueprint-Akademie
 
-    Forschungssystem (Blueprint-Freischaltung)
-        Ziel: Spieler schalten Blueprints nicht mehr über Timer, sondern durch das Herstellen einer bestimmten Anzahl von Waffen, Rüstungen oder anderen Items frei.
-        Aufgaben:
-            Anpassung der UI und Logik in PEAcademyVM.cs und verwandten Klassen, sodass beim Überprüfen der Voraussetzungen (z. B. Anzahl gecrafteter Items) ein Blueprint sofort freigeschaltet werden kann.
-            Entfernen oder Auslagern von Timer-/Korreoutine-Logik, die ursprünglich zeitbasierte Forschung steuerte.
-            Serverseitige Implementierung:
-                Erfassen und Speichern der hergestellten Items pro Spieler bzw. Fraktion (z. B. in einer Datenbank oder in JSON).
-                Prüfung der Crafting-Zähler im Crafting-Request-Handler (z. B. in RequestExecuteCraft.cs).
-            Feedback an den Client: Senden einer Nachricht (z. B. PEAcademyBlueprintUnlocked.cs), wenn die Bedingungen erfüllt sind.
+Ziel
 
-    Mögliche Erweiterungen:
-        Einführung eines kleinen „Tech-Tree“, in dem Abhängigkeiten zwischen Blueprints (z. B. erst IronSword → dann SteelSword) visuell und programmatisch abgebildet werden.
-        Optionale Kombination von Elementen: Neben der reinen Anzahl könnten auch Ressourcen-Kosten oder Prestige-Punkte als Voraussetzung dienen.
+Blueprints werden durch das Craften von Waffen, Rüstungen oder anderen Items freigeschaltet, anstatt durch Timer.
+
+Umsetzung
+
+Anpassung der UI und Logik in PEAcademyVM.cs und verwandten Klassen.
+
+Entfernen oder Auslagern der bisherigen Timer-Logik.
+
+Serverseitige Speicherung der hergestellten Items pro Spieler/Fraktion (z. B. in einer Datenbank oder JSON-Datei).
+
+Implementierung der Überprüfung von Crafting-Zählern im RequestExecuteCraft.cs.
+
+Feedback an den Spieler durch PEAcademyBlueprintUnlocked.cs.
+
+Erweiterungen
+
+Visueller Tech-Tree für Abhängigkeiten zwischen Blueprints.
+
+Alternative Freischaltmechanismen: Ressourcen-Kosten oder Prestige-Punkte.
 
 2. Crafting-Station & Rezepte
 
-    Crafting-UI und Logik
-        Bestehende Dateien: PECraftingStationScreen.cs, PECraftingStationVM.cs, PECraftingRecipeVM.cs
-        Aufgaben:
-            Anpassung der Anzeige: Nur Rezepte, deren zugehöriger Blueprint (Forschung) freigeschaltet wurde, werden aktiv und auswählbar dargestellt – nicht freigeschaltete Rezepte erscheinen ausgegraut oder sind versteckt.
-            Verknüpfung: Sicherstellen, dass jede Rezept-ID eindeutig mit einer Blueprint-ID verknüpft ist.
+Crafting-UI und Logik
 
-    Serverseitige Validierung
-        Beim Erhalt eines Crafting-Requests (z. B. RequestExecuteCraft.cs) muss überprüft werden, ob der entsprechende Blueprint freigeschaltet wurde.
-        Nach erfolgreichem Crafting wird der entsprechende Zähler (z. B. „SwordsCrafted“) erhöht, um den Fortschritt im Forschungssystem zu aktualisieren.
+Anpassung der Anzeige: Freigeschaltete Rezepte auswählbar, nicht freigeschaltete ausgegraut oder versteckt.
+
+Verknüpfung von Rezepten mit spezifischen Blueprint-IDs.
+
+Serverseitige Validierung
+
+Prüfung, ob der Blueprint für ein Item freigeschaltet wurde.
+
+Fortschrittszähler-Update nach erfolgreichem Crafting.
 
 3. Fraktions- & Kriegssystem
 
-    Fraktionssystem
-        Aufgaben:
-            Implementierung einer Mitglieder- und Rangstruktur:
-                z. B. Rang 1: max. 20 Mitglieder, Rang 2: max. 30, Rang 3: max. 50 (plus Gebiet), usw.
-            Integration von Adelsrängen und Prestige-Mechanik: Spieler können innerhalb der Fraktion durch Prestige aufsteigen, was Einfluss auf interne Entscheidungen und Kriegsführung hat.
-            Fraktionsübernahme nur durch Erbfolge oder Umsturz ermöglichen, um mehr Stabilität und Struktur zu gewährleisten.
+Fraktionssystem
 
-    Kriegssystem
-        Aufgaben:
-            Erweiterung um neue Kriegsarten:
-                Handelskrieg (Blockieren von Handelsrouten)
-                Überfall (kleinere Kriegsaktionen mit Plünderungen)
-                Eroberung (Verbessertes System für Dörfer & Burgen)
-            Einschränkungen: Kriegserklärungen nur für Adelsränge bzw. hohe Fraktionsleiter erlauben.
-            Implementierung von NPC-Unterstützung:
-                NPC-Truppen (Wachtruppen, Stadtwachen, Söldner) als Verstärkung und automatische Verteidigung bei Belagerungen.
-            AI-Unterstützung:
-                Automatischer Ressourcenabbau und Garnisonsbesetzung über einfache AI-Soldaten.
+Mitglieder- und Rangstruktur mit Mitgliederbegrenzungen je Rang.
 
-    Datenpersistenz und Automatisierung
-        Alle Fraktionsdaten (Mitglieder, Ränge, Gebietszuweisungen) und Kriegsvorgänge sollten serverseitig persistent gespeichert werden.
-        Eigene Manager-Klassen (z. B. FactionRankManager, WarSystem) zur Trennung der Logik und besseren Skalierbarkeit.
+Prestige-Mechanik zur internen Hierarchie-Steuerung.
+
+Fraktionsübernahme nur durch Erbfolge oder Umsturz.
+
+Klassensystem: Spieler wählen je nach Fraktion ihre Klassen wie Fußtsoldat, Bogenschütze, Kavallerist, Doktor, Bauer, Kraftmann, Schmied, Baumeister. Fraktionsanführer können Titel wie Graf, Herzog, König erhalten, mit Offiziersrängen wie Ritter oder General.
+
+Adelsränge: Höhere Ränge bringen Vorteile wie mehr Mitglieder, größeres Herrschaftsgebiet und Vasallenverwaltung. Fraktionsleiter beginnen als Graf und können durch Prestige und Erfolge bis zum Kaiser aufsteigen.
+
+Kriegssystem
+
+Erweiterung um neue Kriegsarten:
+
+Handelskrieg (Blockieren von Handelsrouten)
+
+Überfall (Plünderungen)
+
+Eroberung (Dörfer- und Burgsystem)
+
+Kriegserklärungen nur durch hohe Fraktionsleiter.
+
+NPC-Unterstützung durch Stadtwachen, Söldner.
+
+AI-Unterstützung für Ressourcenabbau und Garnisonen.
+
+Persistente Speicherung von Fraktionsdaten.
 
 4. NPC-/AI-System
 
-    Datenstruktur und Speicherung
-        Beispielhafte JSON-Struktur für NPCs:
+Datenstruktur
 
-        {
-          "npc_id": "NPC_123",
-          "npc_type": "Farmer",
-          "faction_id": "kingdom_x",
-          "current_task": "gather_wood",
-          "location": {
-            "scene": "town_smithy",
-            "position": {"x": 123, "y": 45}
-          },
-          "inventory": {
-            "wood": 10,
-            "grain": 0
-          },
-          "schedule": {
-            "work_start": "06:00",
-            "work_end": "18:00"
-          },
-          "state": "Idle"
-        }
+Speicherung der NPC-Daten in JSON/Datenbank mit Attributen wie ID, Typ, Fraktion, Inventar, Aufgabe und Standort.
 
-        Speicherung der NPC-Daten serverseitig (z. B. in einer Datenbank oder als JSON-Datei).
+KI-Logik
 
-    KI-Logik
-        Aufgaben:
-            Erstellung von NPCAIBehavior.cs für grundlegende Zustandsmaschinen oder Behavior Trees, die Aufgaben wie „gather wood“, „guard city“ oder „travel“ steuern.
-            Entwicklung von AIJobs.cs für spezifische Job-Logik, wie das Anwerben von Söldnern oder das Erfüllen von Aufgaben innerhalb einer Fraktion.
-            Implementierung von AIDatabase.cs für das Laden und Speichern der NPC-Daten.
+NPCAIBehavior.cs: Zustandsmaschine für NPCs (z. B. Holz sammeln, Stadt bewachen, reisen).
 
-    Leistungsoptimierung
-        Ticking-Strategien für viele NPCs:
-            Simuliere entfernte NPCs weniger häufig (z. B. durch Hochrechnen), um Performance zu schonen.
+AIJobs.cs: Logik für spezifische NPC-Berufe.
+
+AIDatabase.cs: Verwaltung von NPC-Daten.
+
+Leistungsoptimierung
+
+Reduzierte Simulation entfernter NPCs zur Performance-Optimierung.
 
 5. Handelssystem
 
-    Einflussmechanik im Handel
-        ✅ Bereits implementierte Einflussmechanik als Basis.
+Exportsystem & Handelsaufträge
 
-    Exporthandel für Fraktionen
-        Aufgaben:
-            Generierung zufälliger Exportaufträge für Fraktionen.
-            Implementierung der Logik, bei der Fraktionen die geforderten Güter zum Exporthafen liefern müssen, um zusätzliche Belohnungen zu erhalten.
-            Integration der Exporthandel-Mechanik in das bestehende Fraktionssystem, sodass Erfüllung von Exportaufträgen Einfluss und möglicherweise Prestige bringt.
+Automatische Generierung von Handelsaufträgen für Fraktionen alle vier Stunden.
+
+Fraktionen müssen die Aufträge bestätigen, bevor sie diese ausführen.
+
+Zufällige Exportgüter (Nahrung, Waffen, Rüstungen) werden generiert.
+
+Erfolgreiche Lieferung zum Exporthafen bringt Belohnungen, Nichtausführung führt zu Strafen.
 
 6. Bausystem
 
-    Basis-UI und Bauplätze
-        ✅ Existierendes Bau-Menü.
-        ✅ Verfügbare fraktionsspezifische und neutrale Bauplätze, die erworben werden können.
+Bau-UI & Bauplätze
 
-    Baumaterialien & Bau-Stufen
-        Stufe 1: Hardwood, Stone, Bretter, Lehm
-        Stufe 2: Zusätzlich Eisenbarren, Einfluss, Gold
-        Stufe 3: Erhöhte Anforderungen an alle Ressourcen
+Bestehendes Bau-Menü verwenden.
 
-    Gebäudearten & Funktionen
-        Lagerhäuser zur Ressourcenspeicherung
-        Waffenschmiede (für Waffen-Crafting)
-        Rüstungsschmiede (für Rüstungs-Crafting)
-        Märkte (für Spieler-Handel)
-        Hafen (Exporthandel)
-        Felder & Farmen (Nahrungsmittelproduktion)
+Fraktionsspezifische und neutrale Bauplätze zur Nutzung freigeben.
 
-    Bau-Gameplay
-        Ressourcen müssen von Spielern abgeliefert werden.
-        Nutzung eines Hammers, um den Baufortschritt sichtbar zu machen und Gebäude fertigzustellen.
-        Gebäude können auch abgerissen werden.
+Bauslots je nach Standort: Burginnenhof, Dorfinneres oder Außenbereich beeinflussen verfügbare Gebäudetypen.
 
-    Persistenz & Verwaltung
-        ✅ Alle Gebäude werden in der Datenbank gespeichert und bleiben bei Server-Restarts erhalten.
-        🔲 Implementierung einer Überprüfung des tatsächlichen Ressourcenverbrauchs beim Bau.
-        🔲 Optimierung der Verwaltung der Bauplätze, um Spielern einen besseren Überblick zu geben.
+Baumaterialien & Bau-Stufen
 
-    Belohnungssystem
-        🔲 Fertiggestellte Bauprojekte sollen mit Gold und zusätzlichem Einfluss belohnt werden – unter Nutzung des bestehenden Einfluss-Systems.
+Stufe 1: Hardwood, Stone, Bretter, Lehm.
 
-7. Schmiedesystem
+Stufe 2: Eisenbarren, Einfluss, Gold.
 
-    Integration in Bau- und Crafting-Prozesse
-        Aufgaben:
-            Weiterentwicklung der bestehenden Logik in der Waffenschmiede und Rüstungsschmiede.
-            Optimierung des Crafting-Prozesses, um nahtlos zwischen Bau, Crafting und Forschung (Blueprint-Freischaltung) zu verbinden.
-            Optional: Implementierung eines Systems, bei dem das Craften bestimmter Items zusätzliche Blueprints freischaltet, falls dies im Zusammenspiel mit der Akademie gewünscht ist.
+Stufe 3: Höhere Ressourcenanforderungen.
 
-Zusammenfassung und Ausblick
+Gebäudetypen
 
-Diese Roadmap integriert alle relevanten Bereiche:
+Lagerhäuser, Schmieden, Märkte, Häfen, Felder & Farmen.
 
-    Forschung & Blueprint-Akademie (item-basiert, keine Timer mehr)
-    Crafting-Station (mit Rezeptvalidierung und serverseitiger Fortschrittsverfolgung)
-    Fraktions- und Kriegssystem (mit Rang-, Prestige- und Kriegsvorgängen inklusive NPC-Unterstützung)
-    NPC-/AI-System (für dynamische, fraktionsbezogene Aufgaben)
-    Handelssystem (mit Exporthandel und Einflussmechanik)
-    Bausystem (mit mehrstufigen Baumaterialien, persistenter Speicherung und Belohnungen)
-    Schmiedesystem (als integraler Bestandteil von Crafting und Bau)
+Gebäude mit passiver Produktion: Rohstoffgenerierung durch Nahrung/Ressourceneinlagen.
 
-Jedes Modul sollte in sich gut gekapselt sein, sodass Änderungen in einem Bereich (z. B. Forschung durch Crafting) nicht ungewollt in anderen Bereichen zu Problemen führen. Durch klare Trennung der Logik in separate Manager und Services wird die Erweiterbarkeit und Wartbarkeit des Codes langfristig gesichert.
+Fraktionsstützpunkte: Möglichkeit, NPC-Truppen oder Bauern zu generieren.
 
-Diese Roadmap bietet dir einen umfassenden Überblick und konkrete To-Dos, um dein Projekt weiterzuentwickeln und zu optimieren.
+Erweiterte Mitgliedersysteme: Gebäude zur Erhöhung der maximalen Mitgliederzahl.
+
+7. Tier-System
+
+Jagd & Farmtiere
+
+Freilaufende Tiere: Implementierung von Wildtieren zur Jagd (z. B. Rehe, Wildschweine, Hasen).
+
+Farmtiere: Möglichkeit, Tiere wie Kühe, Schafe oder Hühner zu halten.
+
+Neue Ressourcen: Fleisch, Leder, Milch, Eier und andere landwirtschaftliche Produkte.
+
+8. Erweiterte Waffen & Rüstungen
+
+Optionaler Import zusätzlicher Waffen und Rüstungen aus Open-Source-Modellen.
+
+Integration dieser Items in das bestehende Crafting- und Handelsystem.
+
+Fazit
+
+Diese Roadmap definiert eine klare, modulare Struktur zur Umsetzung der geplanten Mechaniken mit erweiterten Fraktions-, Handels-, Heilungs- und Jagdsystemen sowie neuen Rohstoffen und optionalen Waffen/Rüstungen.
+
+
 
 
 # Persistent Empires Open Sourced
